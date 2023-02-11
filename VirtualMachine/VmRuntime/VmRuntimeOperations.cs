@@ -9,48 +9,56 @@ public partial class VmRuntime
     private readonly Stack<int> _recursionStack = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void NotNumber()
+    private void Not()
     {
-        ReadNumber(out decimal a);
-        Memory.Stack.Push(a.IsEquals(0));
+        object obj = Memory.Pop() ?? throw new InvalidOperationException();
+        switch (obj)
+        {
+            case decimal d when !d.IsEquals(0):
+                Memory.Push(d == 0);
+                break;
+            case bool b:
+                Memory.Push(!b);
+                break;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void EqualsNumber()
+    private void Equals()
     {
-        ReadTwoNumbers(out decimal a, out decimal b);
+        ReadTwos(out decimal a, out decimal b);
 
-        Memory.Stack.Push(a.IsEquals(b));
+        Memory.Push(a.IsEquals(b));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void DivNumber()
+    private void Div()
     {
-        ReadTwoNumbers(out decimal a, out decimal b);
+        ReadTwos(out decimal a, out decimal b);
 
-        Memory.Stack.Push(a / b);
+        Memory.Push(a / b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void MulNumber()
+    private void Mul()
     {
-        ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Stack.Push(a * b);
+        ReadTwos(out decimal a, out decimal b);
+        Memory.Push(a * b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void SubNumber()
+    private void Sub()
     {
-        ReadTwoNumbers(out decimal a, out decimal b);
+        ReadTwos(out decimal a, out decimal b);
 
-        Memory.Stack.Push(a - b);
+        Memory.Push(a - b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void AddNumber()
+    private void Add()
     {
-        ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Stack.Push(a + b);
+        ReadTwos(out decimal a, out decimal b);
+        Memory.Push(a + b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -65,7 +73,7 @@ public partial class VmRuntime
             throw new InvalidOperationException($"variable with id {Memory.InstructionPointer} not found");
 
         VmVariable vmVariable = _variables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
-        vmVariable.ChangeValue(Memory.Stack.Pop());
+        vmVariable.ChangeValue(Memory.Pop());
     }
 
     private void LoadVariable()
@@ -75,7 +83,7 @@ public partial class VmRuntime
             throw new InvalidOperationException($"variable with id {ip} not found");
 
         VmVariable value = _variables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
-        Memory.Stack.Push(value.Value);
+        Memory.Push(value.Value);
     }
 
     private void CallMethod()
@@ -94,20 +102,20 @@ public partial class VmRuntime
 
     private void JumpIfNotZero()
     {
-        object obj = Memory.Stack.Pop() ?? throw new InvalidOperationException();
+        object obj = Memory.Pop() ?? throw new InvalidOperationException();
         switch (obj)
         {
             case decimal d when !d.IsEquals(0):
             case true:
-                Memory.InstructionPointer = (int)(Memory.Stack.Pop() ?? throw new InvalidOperationException());
+                Memory.InstructionPointer = (int)(Memory.Pop() ?? throw new InvalidOperationException());
                 break;
         }
     }
 
     private void JumpIfZero()
     {
-        int ip = (int)(Memory.Stack.Pop() ?? throw new InvalidOperationException());
-        object obj = Memory.Stack.Pop() ?? throw new InvalidOperationException();
+        int ip = (int)(Memory.Pop() ?? throw new InvalidOperationException());
+        object obj = Memory.Pop() ?? throw new InvalidOperationException();
         switch (obj)
         {
             case decimal d when d.IsEquals(0):
@@ -119,8 +127,8 @@ public partial class VmRuntime
 
     private void LessThan()
     {
-        ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Stack.Push(a < b);
+        ReadTwos(out decimal a, out decimal b);
+        Memory.Push(a < b);
     }
 
     private void PushAddress()
@@ -140,7 +148,7 @@ public partial class VmRuntime
 
     private void Jump()
     {
-        object reg = Memory.Stack.Pop() ?? throw new InvalidOperationException();
+        object reg = Memory.Pop() ?? throw new InvalidOperationException();
         Memory.InstructionPointer = reg is int i ? i : (int)(decimal)reg;
     }
 
@@ -161,12 +169,12 @@ public partial class VmRuntime
     private void PushConstant()
     {
         object? var = Memory.Constants[Memory.InstructionPointer];
-        Memory.Stack.Push(var);
+        Memory.Push(var);
     }
 
     private void Duplicate()
     {
-        Memory.Stack.Push(Memory.Stack.Peek());
+        Memory.Push(Memory.Peek());
     }
 
     private void CopyVariable()

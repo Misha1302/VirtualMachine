@@ -9,7 +9,7 @@ public static class Library
 {
     public static void Print(VmRuntime vmRuntime)
     {
-        object? obj = vmRuntime.Memory.Stack.Pop();
+        object? obj = vmRuntime.Memory.Pop();
         switch (obj)
         {
             case null:
@@ -26,18 +26,18 @@ public static class Library
 
     public static void Input(VmRuntime vmRuntime)
     {
-        vmRuntime.Memory.Stack.Push(Console.ReadLine());
+        vmRuntime.Memory.Push(Console.ReadLine());
     }
 
-    public static void ToNumber(VmRuntime vmRuntime)
+    public static void To(VmRuntime vmRuntime)
     {
-        object memoryARegister = vmRuntime.Memory.Stack.Pop() ?? throw new NullReferenceException();
+        object memoryARegister = vmRuntime.Memory.Pop() ?? throw new NullReferenceException();
 
         decimal value = memoryARegister is string s
             ? Convert.ToDecimal(s.Replace('.', ','))
             : Convert.ToDecimal(memoryARegister);
 
-        vmRuntime.Memory.Stack.Push(value);
+        vmRuntime.Memory.Push(value);
     }
 
     public static void PrintState(VmRuntime vmRuntime)
@@ -47,9 +47,9 @@ public static class Library
 
     public static void RandomInteger(VmRuntime vmRuntime)
     {
-        int max = (int)(decimal)(vmRuntime.Memory.Stack.Pop() ?? throw new NullReferenceException());
-        int min = (int)(decimal)(vmRuntime.Memory.Stack.Pop() ?? throw new NullReferenceException());
+        int max = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new NullReferenceException());
+        int min = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new NullReferenceException());
 
-        vmRuntime.Memory.Stack.Push((decimal)Random.Shared.Next(min, max + 1));
+        vmRuntime.Memory.Push((decimal)Random.Shared.Next(min, max + 1));
     }
 }

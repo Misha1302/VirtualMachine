@@ -10,104 +10,104 @@ public static class Library
     public static void Sqrt(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Sqrt(a));
+        vmRuntime.Memory.Push(NeilMath.Sqrt(a));
     }
 
     private static decimal ReadDecimal(VmRuntime vmRuntime)
     {
-        decimal a = (decimal)(vmRuntime.Memory.Stack.Pop() ?? throw new InvalidOperationException());
+        decimal a = (decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
         return a;
     }
 
     public static void Pow(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        decimal b = (decimal)(vmRuntime.Memory.Stack.Pop() ?? throw new InvalidOperationException());
-        vmRuntime.Memory.Stack.Push(NeilMath.Pow(a, b));
+        decimal b = (decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        vmRuntime.Memory.Push(NeilMath.Pow(a, b));
     }
 
     public static void Abs(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Abs(a));
+        vmRuntime.Memory.Push(NeilMath.Abs(a));
     }
 
     public static void Cos(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Cos(a));
+        vmRuntime.Memory.Push(NeilMath.Cos(a));
     }
 
     public static void Sin(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Sin(a));
+        vmRuntime.Memory.Push(NeilMath.Sin(a));
     }
 
     public static void Tan(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Tan(a));
+        vmRuntime.Memory.Push(NeilMath.Tan(a));
     }
 
     public static void Exp(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Exp(a));
+        vmRuntime.Memory.Push(NeilMath.Exp(a));
     }
 
     public static void Truncate(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Truncate(a));
+        vmRuntime.Memory.Push(NeilMath.Truncate(a));
     }
 
     public static void Round(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Round(a));
+        vmRuntime.Memory.Push(NeilMath.Round(a));
     }
 
     public static void Ceil(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Ceiling(a));
+        vmRuntime.Memory.Push(NeilMath.Ceiling(a));
     }
 
     public static void Sign(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push((decimal)NeilMath.Sign(a));
+        vmRuntime.Memory.Push((decimal)NeilMath.Sign(a));
     }
 
     public static void Floor(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Floor(a));
+        vmRuntime.Memory.Push(NeilMath.Floor(a));
     }
 
     public static void Acos(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Acos(a));
+        vmRuntime.Memory.Push(NeilMath.Acos(a));
     }
 
     public static void Asin(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Asin(a));
+        vmRuntime.Memory.Push(NeilMath.Asin(a));
     }
 
     public static void Atan(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Atan(a));
+        vmRuntime.Memory.Push(NeilMath.Atan(a));
     }
 
     public static void Log10(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Stack.Push(NeilMath.Log10(a));
+        vmRuntime.Memory.Push(NeilMath.Log10(a));
     }
 
     // <copyright file="MathM.cs" company="Neil McNeight">
@@ -819,18 +819,18 @@ public static class Library
             if (Abs(m1) < Abs(m2)) return m1;
 
             decimal timesInto = Truncate(m1 / m2);
-            decimal shiftingNumber = m2;
+            decimal shifting = m2;
             int sign = Sign(m1);
 
             for (int i = 0; i <= GetDecimalPlaces(m2, true); i++)
             {
                 // Note that first "digit" will be the integer portion of d2
-                decimal digit = Truncate(shiftingNumber);
+                decimal digit = Truncate(shifting);
 
                 m1 -= timesInto * (digit / _roundPower10Decimal[i]);
 
-                shiftingNumber = (shiftingNumber - digit) * 10m; // remove used digit and shift for next iteration
-                if (shiftingNumber == 0m) break;
+                shifting = (shifting - digit) * 10m; // remove used digit and shift for next iteration
+                if (shifting == 0m) break;
             }
 
             // If we've crossed zero because of the precision mismatch,

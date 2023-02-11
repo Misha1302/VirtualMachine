@@ -4,13 +4,13 @@ public enum InstructionName : byte
 {
     JumpIfZero = 1,
 
-    NotNumber,
-    EqualsNumber,
+    Not,
+    Equals,
 
-    AddNumber,
-    SubNumber,
-    MultiplyNumber,
-    DivideNumber,
+    Add,
+    Sub,
+    Multiply,
+    Divide,
 
     Halt,
     SetVariable,

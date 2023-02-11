@@ -1,6 +1,6 @@
 ﻿namespace VirtualMachine;
 
-using System.Collections;
+using System.Reflection;
 using global::VirtualMachine.Variables;
 
 public class VmImage
@@ -8,20 +8,22 @@ public class VmImage
     private const int BaseProgramSize = 128;
 
     private readonly List<(string, int)> _goto;
-
+    private readonly Dictionary<string, int> _importedMethodsIndexes;
     private readonly Dictionary<string, int> _labels;
     private readonly VmMemory _memory;
     private readonly Dictionary<int, int> _pointersToInsertVariables;
     private readonly List<VmVariable> _variables;
     public readonly AssemblyManager AssemblyManager;
-    public readonly Dictionary<string, int> ImportedMethodsIndexes;
 
     private int _index;
     private int _ip;
 
-    public VmImage()
+    private string _labelName = "label0";
+    private string _varName = "var0";
+
+    public VmImage(string mainLibraryPath)
     {
-        ImportedMethodsIndexes = new Dictionary<string, int>();
+        _importedMethodsIndexes = new Dictionary<string, int>();
         AssemblyManager = new AssemblyManager();
         _variables = new List<VmVariable>();
         _pointersToInsertVariables = new Dictionary<int, int>();
@@ -36,6 +38,25 @@ public class VmImage
 
         _ip = 0;
         _index = 0;
+
+
+        Init(mainLibraryPath);
+    }
+
+    private void Init(string mainLibraryPath)
+    {
+        Assembly assembly = Assembly.LoadFrom(mainLibraryPath);
+        Type @class = assembly.GetType("Library.Library") ?? throw new InvalidOperationException();
+        IEnumerable<MethodInfo> methods = @class.GetMethods()
+            .Where(x =>
+            {
+                ParameterInfo[] parameters = x.GetParameters();
+                if (parameters.Length == 0) return false;
+                return parameters[0].ParameterType == typeof(VmRuntime.VmRuntime);
+            });
+
+        foreach (MethodInfo method in methods)
+            ImportMethodFromAssembly(mainLibraryPath, method.Name);
     }
 
     public void WriteNextOperation(InstructionName operation)
@@ -91,7 +112,6 @@ public class VmImage
         VmMemory memToReturn = new()
         {
             Constants = _memory.Constants,
-            Stack = new Stack(),
             InstructionPointer = 0,
             MemoryArray = _memory.MemoryArray
         };
@@ -163,18 +183,33 @@ public class VmImage
 
     public void ImportMethodFromAssembly(string dllPath, string methodName)
     {
-        if (ImportedMethodsIndexes.ContainsKey(methodName)) return;
+        if (_importedMethodsIndexes.ContainsKey(methodName)) return;
 
         AssemblyManager.ImportMethodFromAssembly(dllPath, methodName);
-        ImportedMethodsIndexes.Add(methodName, _index);
+        _importedMethodsIndexes.Add(methodName, _index);
         _index++;
     }
 
-    public void CreateFunction(string name)
+
+    public void CreateFunction(string name, string[] parameters, Action body)
     {
         WriteNextOperation(InstructionName.Halt);
 
         SetLabel(name);
+
+        parameters = parameters.Reverse().ToArray();
+        foreach (string parameter in parameters)
+        {
+            CreateVariable(parameter);
+            SetVariable(parameter);
+        }
+
+        body();
+
+        foreach (string parameter in parameters)
+            DeleteVariable(parameter);
+
+        WriteNextOperation(InstructionName.Ret);
     }
 
     public void Call(string funcName)
@@ -189,5 +224,77 @@ public class VmImage
     {
         int varId = (_variables.FindLast(x => x.Name == varName) ?? throw new InvalidOperationException()).Id;
         WriteNextOperation(InstructionName.DeleteVariable, varId);
+    }
+
+    public void ForLoop(Action start, Action condition, Action end, Action body)
+    {
+        string loopLabel = GetNextLabelName();
+        string endOfLoopLabel = GetNextLabelName();
+
+        start();
+        SetLabel(loopLabel);
+        condition();
+        Goto(endOfLoopLabel, InstructionName.JumpIfZero);
+        body();
+        end();
+        Goto(loopLabel, InstructionName.Jump);
+        SetLabel(endOfLoopLabel);
+    }
+
+    public void Repeat(Action start, Action<string> body, Action upperBound)
+    {
+        string varName = GenerateNextVarName();
+
+        ForLoop(
+            () =>
+            {
+                // i = 0
+                CreateVariable(varName);
+                start();
+                SetVariable(varName);
+            },
+            () =>
+            {
+                // i < count
+                LoadVariable(varName);
+                upperBound();
+                WriteNextOperation(InstructionName.LessThan);
+            },
+            () =>
+            {
+                // i++
+                LoadVariable(varName);
+                WriteNextOperation(InstructionName.PushConstant, 1);
+                WriteNextOperation(InstructionName.Add);
+                SetVariable(varName);
+            },
+            () => { body(varName); }
+        );
+    }
+
+    private string GenerateNextVarName()
+    {
+        return GenerateName(ref _varName);
+    }
+
+    private string GetNextLabelName()
+    {
+        return GenerateName(ref _labelName);
+    }
+
+    private static string GenerateName(ref string name)
+    {
+        int number = Convert.ToInt32(name[^1].ToString());
+        int next = number + 1;
+
+        if (next == 10) name += '0';
+        else name = name[..^1] + next;
+
+        return name;
+    }
+
+    public void CallForeignMethod(string name)
+    {
+        WriteNextOperation(InstructionName.CallMethod, _importedMethodsIndexes[name]);
     }
 }

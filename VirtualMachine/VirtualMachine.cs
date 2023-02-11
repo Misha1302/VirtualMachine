@@ -22,6 +22,21 @@ public static class VirtualMachine
         });
     }
 
+    public static void RunAndWait(VmImage vmImage)
+    {
+        Run(vmImage);
+        WaitLast();
+    }
+
+    public static VmMemory RunDebug(VmImage image)
+    {
+        VmRuntime.VmRuntime runtime = new() { OnProgramExit = OnTaskExit };
+        runtime.SetImage(image);
+        runtime.Run();
+
+        return runtime.Memory;
+    }
+
     public static void WaitLast()
     {
         while (_countOfTasks != 0)

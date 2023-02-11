@@ -1,31 +1,26 @@
 ﻿using ConsoleProgram;
 using VirtualMachine;
 
-VmImage vmImage = new();
+VmImage vmImage = new(Constants.MainLibraryPath);
 
-vmImage.ImportMethodFromAssembly(Constants.MainLibraryPath, "Print");
-
-// number i = 0
 vmImage.CreateVariable("i");
-vmImage.WriteNextOperation(InstructionName.PushConstant, 0);
+vmImage.WriteNextOperation(InstructionName.PushConstant, 5);
 vmImage.SetVariable("i");
 
-vmImage.SetLabel("label");
+vmImage.Repeat(
+    () => { vmImage.WriteNextOperation(InstructionName.PushConstant, -5); },
+    varName =>
+    {
+        vmImage.LoadVariable(varName);
+        vmImage.WriteNextOperation(InstructionName.PushConstant, 1);
+        vmImage.WriteNextOperation(InstructionName.Add);
+        vmImage.SetVariable(varName);
 
-// body
-vmImage.WriteNextOperation(InstructionName.NoOperation);
+        vmImage.LoadVariable(varName);
+        vmImage.CallForeignMethod("Print");
+    },
+    () => { vmImage.LoadVariable("i"); }
+);
 
-// i++
-vmImage.LoadVariable("i");
-vmImage.WriteNextOperation(InstructionName.PushConstant, 1);
-vmImage.WriteNextOperation(InstructionName.AddNumber);
-vmImage.SetVariable("i");
 
-// if i is 100_000_000 than goto label
-vmImage.LoadVariable("i");
-vmImage.WriteNextOperation(InstructionName.PushConstant, 100_000_000);
-vmImage.WriteNextOperation(InstructionName.EqualsNumber);
-vmImage.Goto("label", InstructionName.JumpIfZero);
-
-VirtualMachine.VirtualMachine.Run(vmImage);
-VirtualMachine.VirtualMachine.WaitLast();
+VirtualMachine.VirtualMachine.RunAndWait(vmImage);

@@ -61,6 +61,7 @@ public partial class VmRuntime
                 string name = inst.Method.Name;
                 // object? unused = Memory.Stack.Peek();
                 int unused1 = Memory.InstructionPointer;
+                if (debugList.Count > 1000) debugList.RemoveAt(0);
                 debugList.Add(name);
 #endif
             } while (Memory.InstructionPointer < instructionsCount);
@@ -87,12 +88,12 @@ public partial class VmRuntime
         {
             Instruction instr = operation switch
             {
-                (byte)InstructionName.AddNumber => AddNumber,
-                (byte)InstructionName.SubNumber => SubNumber,
-                (byte)InstructionName.MultiplyNumber => MulNumber,
-                (byte)InstructionName.DivideNumber => DivNumber,
-                (byte)InstructionName.EqualsNumber => EqualsNumber,
-                (byte)InstructionName.NotNumber => NotNumber,
+                (byte)InstructionName.Add => Add,
+                (byte)InstructionName.Sub => Sub,
+                (byte)InstructionName.Multiply => Mul,
+                (byte)InstructionName.Divide => Div,
+                (byte)InstructionName.Equals => Equals,
+                (byte)InstructionName.Not => Not,
                 (byte)InstructionName.JumpIfZero => JumpIfZero,
                 (byte)InstructionName.JumpIfNotZero => JumpIfNotZero,
                 (byte)InstructionName.SetVariable => SetVariable,
@@ -134,11 +135,11 @@ public partial class VmRuntime
         StringBuilder outputStringBuilder = new();
 
         outputStringBuilder.Append("Stack={ ");
-        outputStringBuilder.Append(string.Join(",", Memory.Stack.ToArray().Select(x => x switch
+        outputStringBuilder.Append(string.Join(",", Memory.GetStack().ToArray().Select(x => x switch
         {
             string s => $"\"{s}\"",
-            char c => $"\"{c}\"",
-            decimal m => $"\"{m}\"",
+            char c => $"\'{c}\'",
+            decimal m => m.ToString(CultureInfo.InvariantCulture).Replace(',', '.'),
             _ => x?.ToString()
         })));
         outputStringBuilder.AppendLine("}");
@@ -164,20 +165,15 @@ public partial class VmRuntime
 
     private void ReadTwoValues(out object? obj0, out object? obj1)
     {
-        obj1 = Memory.Stack.Pop();
-        obj0 = Memory.Stack.Pop();
+        obj1 = Memory.Pop();
+        obj0 = Memory.Pop();
     }
 
-    private void ReadTwoNumbers(out decimal a, out decimal b)
+    private void ReadTwos(out decimal a, out decimal b)
     {
         ReadTwoValues(out object? obj0, out object? obj1);
         a = (decimal)(obj0 ?? throw new InvalidOperationException());
         b = (decimal)(obj1 ?? throw new InvalidOperationException());
-    }
-
-    private void ReadNumber(out decimal a)
-    {
-        a = (decimal)(Memory.Stack.Pop() ?? throw new InvalidOperationException());
     }
 
     private delegate void Instruction();

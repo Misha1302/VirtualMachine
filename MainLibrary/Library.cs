@@ -10,18 +10,12 @@ public static class Library
     public static void Print(VmRuntime vmRuntime)
     {
         object? obj = vmRuntime.Memory.Pop();
-        switch (obj)
-        {
-            case null:
-                Console.WriteLine("null");
-                break;
-            case decimal i:
-                Console.WriteLine(i.ToString(CultureInfo.InvariantCulture).Replace(',', '.'));
-                break;
-            default:
-                Console.WriteLine(obj);
-                break;
-        }
+        Console.WriteLine(VmRuntime.ObjectToString(obj));
+    }
+
+    private static string NumberToString(decimal m)
+    {
+        return m.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
     }
 
     public static void Input(VmRuntime vmRuntime)

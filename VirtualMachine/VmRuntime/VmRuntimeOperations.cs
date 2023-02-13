@@ -1,6 +1,8 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
+using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using global::VirtualMachine.Variables;
 
@@ -26,7 +28,7 @@ public partial class VmRuntime
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Equals()
     {
-        ReadTwos(out decimal a, out decimal b);
+        ReadTwoNumbers(out decimal a, out decimal b);
 
         Memory.Push(a.IsEquals(b));
     }
@@ -34,31 +36,107 @@ public partial class VmRuntime
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Div()
     {
-        ReadTwos(out decimal a, out decimal b);
+        ReadTwoValues(out object? a, out object? b);
 
-        Memory.Push(a / b);
+        switch (a)
+        {
+            case decimal m:
+                Memory.Push(m / (decimal)(b ?? throw new InvalidOperationException()));
+                break;
+            case string s:
+                List<object?> strings = s.Split((string)(b ?? string.Empty)).Select(x => (object?)x).ToList();
+                Memory.Push(strings);
+                break;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Mul()
     {
-        ReadTwos(out decimal a, out decimal b);
-        Memory.Push(a * b);
+        ReadTwoValues(out object? a, out object? b);
+
+        StringBuilder stringBuilder;
+        switch (a)
+        {
+            case decimal m:
+                Memory.Push(m * (decimal)(b ?? throw new InvalidOperationException()));
+                break;
+            case string s:
+                stringBuilder = new StringBuilder();
+                for (int i = 0; i < (decimal)(b ?? throw new InvalidOperationException()); i++)
+                    stringBuilder.Append(s);
+                Memory.Push(stringBuilder.ToString());
+                break;
+            case char c:
+                stringBuilder = new StringBuilder();
+                for (int i = 0; i < (decimal)(b ?? throw new InvalidOperationException()); i++)
+                    stringBuilder.Append(c);
+                Memory.Push(stringBuilder.ToString());
+                break;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Sub()
     {
-        ReadTwos(out decimal a, out decimal b);
+        ReadTwoValues(out object? a, out object? b);
 
-        Memory.Push(a - b);
+        switch (a)
+        {
+            case decimal m:
+                Memory.Push(m - (decimal)(b ?? throw new InvalidOperationException()));
+                break;
+            case string s:
+                Memory.Push(s.Replace((string)(b ?? string.Empty), ""));
+                break;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Add()
     {
-        ReadTwos(out decimal a, out decimal b);
-        Memory.Push(a + b);
+        ReadTwoValues(out object? a, out object? b);
+
+        if (a is string str0)
+        {
+            if (b is List<object?> list)
+            {
+                list.Add(str0);
+                Memory.Push(list);
+            }
+            else
+            {
+                Memory.Push(str0 + ObjectToString(b));
+            }
+        }
+        else if (b is string str1)
+        {
+            if (a is List<object?> list)
+            {
+                list.Add(str1);
+                Memory.Push(list);
+            }
+            else
+            {
+                Memory.Push(ObjectToString(b) + str1);
+            }
+        }
+        else
+        {
+            switch (a)
+            {
+                case decimal m:
+                    Memory.Push(m + (decimal)(b ?? throw new InvalidOperationException()));
+                    break;
+                case char c:
+                    Memory.Push($"{c}{ObjectToString(b)}");
+                    break;
+                case List<object?> collection:
+                    collection.Add(b);
+                    Memory.Push(collection);
+                    break;
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -127,7 +205,7 @@ public partial class VmRuntime
 
     private void LessThan()
     {
-        ReadTwos(out decimal a, out decimal b);
+        ReadTwoNumbers(out decimal a, out decimal b);
         Memory.Push(a < b);
     }
 
@@ -201,5 +279,13 @@ public partial class VmRuntime
     private static void NoOperation()
     {
         // no operation
+    }
+
+    private void GetByIndex()
+    {
+        ReadTwoValues(out object? list, out object? index);
+        IList obj0 = (List<object?>)(list ?? throw new InvalidOperationException());
+        object? value = obj0[(int)(decimal)(index ?? throw new InvalidOperationException())];
+        Memory.Push(value);
     }
 }

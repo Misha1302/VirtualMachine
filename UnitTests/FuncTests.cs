@@ -24,9 +24,10 @@ public class FuncTests
 
         VmMemory memory = VirtualMachine.RunDebug(vmImage);
 
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(5));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(5));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(5));
+        Stack<object?> stack = memory.GetStack();
+        Assert.That(stack.Pop(), Is.EqualTo(5));
+        Assert.That(stack.Pop(), Is.EqualTo(5));
+        Assert.That(stack.Pop(), Is.EqualTo(5));
     }
 
     [Test]
@@ -53,11 +54,12 @@ public class FuncTests
 
         VmMemory memory = VirtualMachine.RunDebug(vmImage);
 
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue),
+        Stack<object?> stack = memory.GetStack();
+        Assert.That(stack.Pop(),
             Is.EqualTo(arrayOfValues[2] * arrayOfValues[2]));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue),
+        Assert.That(stack.Pop(),
             Is.EqualTo(arrayOfValues[1] * arrayOfValues[1]));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue),
+        Assert.That(stack.Pop(),
             Is.EqualTo(arrayOfValues[0] * arrayOfValues[0]));
     }
 
@@ -89,11 +91,12 @@ public class FuncTests
 
         VmMemory memory = VirtualMachine.RunDebug(vmImage);
 
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue),
+        Stack<object?> stack = memory.GetStack();
+        Assert.That(stack.Pop(),
             Is.EqualTo(arrayOfValues[2] + arrayOfValues0[2]));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue),
+        Assert.That(stack.Pop(),
             Is.EqualTo(arrayOfValues[1] + arrayOfValues0[1]));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue),
+        Assert.That(stack.Pop(),
             Is.EqualTo(arrayOfValues[0] + arrayOfValues0[0]));
     }
 }

@@ -16,7 +16,7 @@ public class AssemblyManager
 
 #pragma warning disable IL2075
     [UnconditionalSuppressMessage("Trimming",
-        "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
+        "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require object access otherwise can break functionality when trimming application code",
         Justification = "<Pending>")]
     public void ImportMethodFromAssembly(string dllPath, string methodName)
     {

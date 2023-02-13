@@ -1,6 +1,5 @@
 namespace UnitTests;
 
-using System.Collections;
 using ConsoleProgram;
 using VirtualMachine;
 
@@ -28,11 +27,12 @@ public class LoopTests
 
         VmMemory memory = VirtualMachine.RunDebug(vmImage);
 
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(4));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(3));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(2));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(1));
-        Assert.That((decimal)(memory.GetStack().Pop() ?? decimal.MinValue), Is.EqualTo(0));
+        Stack<object?> stack = memory.GetStack();
+        Assert.That(stack.Pop(), Is.EqualTo(4));
+        Assert.That(stack.Pop(), Is.EqualTo(3));
+        Assert.That(stack.Pop(), Is.EqualTo(2));
+        Assert.That(stack.Pop(), Is.EqualTo(1));
+        Assert.That(stack.Pop(), Is.EqualTo(0));
     }
 
     [Test]
@@ -59,12 +59,12 @@ public class LoopTests
 
         VmMemory memory = VirtualMachine.RunDebug(vmImage);
 
-        Stack stack = memory.GetStack();
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(4));
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(2));
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(0));
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(-2));
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(-4));
+        Stack<object?> stack = memory.GetStack();
+        Assert.That(stack.Pop(), Is.EqualTo(4));
+        Assert.That(stack.Pop(), Is.EqualTo(2));
+        Assert.That(stack.Pop(), Is.EqualTo(0));
+        Assert.That(stack.Pop(), Is.EqualTo(-2));
+        Assert.That(stack.Pop(), Is.EqualTo(-4));
     }
 
     [Test]
@@ -94,18 +94,15 @@ public class LoopTests
                 vmImage.WriteNextOperation(InstructionName.Add);
                 vmImage.SetVariable(varName);
             },
-            () =>
-            {
-                vmImage.LoadVariable(varName);
-            }
+            () => { vmImage.LoadVariable(varName); }
         );
 
         VmMemory memory = VirtualMachine.RunDebug(vmImage);
 
-        Stack stack = memory.GetStack();
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(2));
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(1));
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(0));
-        Assert.That((decimal)(stack.Pop() ?? decimal.MinValue), Is.EqualTo(-1));
+        Stack<object?> stack = memory.GetStack();
+        Assert.That(stack.Pop(), Is.EqualTo(2));
+        Assert.That(stack.Pop(), Is.EqualTo(1));
+        Assert.That(stack.Pop(), Is.EqualTo(0));
+        Assert.That(stack.Pop(), Is.EqualTo(-1));
     }
 }

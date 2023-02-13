@@ -1,11 +1,9 @@
 ﻿namespace VirtualMachine;
 
-using System.Collections;
-
 [Serializable]
 public record VmMemory
 {
-    private Stack _stack = new(16);
+    private Stack<object?> _stack = new(16);
     public Dictionary<int, object?> Constants = new(16);
 
     public int InstructionPointer;
@@ -13,7 +11,7 @@ public record VmMemory
     public int MaxStackSize = 1_000_000;
     public byte[] MemoryArray = Array.Empty<byte>();
 
-    public Stack GetStack()
+    public Stack<object?> GetStack()
     {
         return _stack;
     }

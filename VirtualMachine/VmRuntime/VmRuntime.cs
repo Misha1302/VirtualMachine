@@ -1,5 +1,6 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
+using System.Collections;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -110,6 +111,7 @@ public partial class VmRuntime
                 (byte)InstructionName.PushConstant => PushConstant,
                 (byte)InstructionName.DeleteVariable => DeleteVariable,
                 (byte)InstructionName.NoOperation => NoOperation,
+                (byte)InstructionName.GetByIndex => GetByIndex,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {(InstructionName)operation}")
             };
             instructions.Add(instr);
@@ -169,11 +171,51 @@ public partial class VmRuntime
         obj0 = Memory.Pop();
     }
 
-    private void ReadTwos(out decimal a, out decimal b)
+    private void ReadTwoNumbers(out decimal a, out decimal b)
     {
         ReadTwoValues(out object? obj0, out object? obj1);
         a = (decimal)(obj0 ?? throw new InvalidOperationException());
         b = (decimal)(obj1 ?? throw new InvalidOperationException());
+    }
+
+    private static string NumberToString(decimal m)
+    {
+        return m.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
+    }
+
+    public static string ObjectToString(object? obj)
+    {
+        switch (obj)
+        {
+            case null:
+                return "null";
+            case decimal i:
+                return i.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
+            case string s:
+                return s;
+            case IEnumerable collection:
+            {
+                StringBuilder stringBuilder = new();
+                stringBuilder.Append('[');
+                foreach (object? item in collection)
+                {
+                    string? str = item switch
+                    {
+                        null => "null, ",
+                        decimal m => $"{NumberToString(m)}, ",
+                        string s => $"\"{s}\", ",
+                        _ => $"{item}, "
+                    };
+                    stringBuilder.Append(str);
+                }
+
+                stringBuilder.Remove(stringBuilder.Length - 2, 2);
+                stringBuilder.Append(']');
+                return stringBuilder.ToString();
+            }
+        }
+
+        return (string)obj;
     }
 
     private delegate void Instruction();

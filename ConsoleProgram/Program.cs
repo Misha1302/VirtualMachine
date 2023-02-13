@@ -1,26 +1,14 @@
-﻿using ConsoleProgram;
-using VirtualMachine;
+﻿using Tokenizer.Lexer;
+using Tokenizer.Token;
 
-VmImage vmImage = new(Constants.MainLibraryPath);
+const string code = """
+repeat(0, 5, i)
+    list = (('Hello, human number ' + i) / ' ') + 'Added!'
+    Print(list[3] + ' ' + list[4])
+end
+""";
 
-vmImage.CreateVariable("i");
-vmImage.WriteNextOperation(InstructionName.PushConstant, 5);
-vmImage.SetVariable("i");
+List<Token> tokens = Lexer.Tokenize(code);
 
-vmImage.Repeat(
-    () => { vmImage.WriteNextOperation(InstructionName.PushConstant, -5); },
-    varName =>
-    {
-        vmImage.LoadVariable(varName);
-        vmImage.WriteNextOperation(InstructionName.PushConstant, 1);
-        vmImage.WriteNextOperation(InstructionName.Add);
-        vmImage.SetVariable(varName);
-
-        vmImage.LoadVariable(varName);
-        vmImage.CallForeignMethod("Print");
-    },
-    () => { vmImage.LoadVariable("i"); }
-);
-
-
-VirtualMachine.VirtualMachine.RunAndWait(vmImage);
+foreach (Token item in tokens) 
+    Console.WriteLine($"{item.TokenType}::{item.Text}::{item.Value}");

@@ -27,5 +27,6 @@ public enum InstructionName : byte
     PushConstant,
     CopyVariable,
     DeleteVariable,
-    NoOperation
+    NoOperation,
+    GetByIndex
 }

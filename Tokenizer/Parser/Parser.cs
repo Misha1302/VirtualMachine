@@ -69,7 +69,7 @@ public class Parser
     private void DetectMethods(IEnumerable<Token> tokens)
     {
         IEnumerable<Token> collection = tokens.Where(t =>
-            t.TokenType == TokenType.Unknown && _assemblyManager.ImportedMethods.Contains(t.Text));
+            t.TokenType == TokenType.Unknown && _assemblyManager.ImportedMethods.ContainsKey(t.Text));
 
         foreach (Token t in collection)
             t.TokenType = TokenType.ForeignMethod;

@@ -2,7 +2,6 @@
 
 namespace Library;
 
-using System.Globalization;
 using VirtualMachine.VmRuntime;
 
 public static class Library
@@ -53,7 +52,7 @@ public static class Library
                     }
                     else
                     {
-                        object? clone = ((ICloneable)item).Clone();
+                        object clone = ((ICloneable)item).Clone();
                         newList.Add(clone);
                     }
                 });

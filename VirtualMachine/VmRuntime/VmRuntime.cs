@@ -11,6 +11,7 @@ public partial class VmRuntime
 {
     private readonly List<VmVariable> _variables = new(64);
     private AssemblyManager _assemblyManager;
+    private List<Instruction>? _instructions;
 
     private Dictionary<int, int> _pointersToInsertVariables = new(64);
     public VmMemory Memory;
@@ -36,26 +37,18 @@ public partial class VmRuntime
 
     public void Run()
     {
-        List<Instruction> instructions = GenerateDictToExecute();
-
-        Execute(instructions);
+        Execute(_instructions ?? throw new InvalidOperationException());
     }
 
     private void Execute(IReadOnlyList<Instruction> instructions)
     {
-        int instructionsCount = instructions.Count - 1;
 #if !DEBUG
         try
 #endif
         {
-            Memory.Ip = -1;
-            do
-            {
-                Memory.Ip++;
-                Instruction inst = instructions[Memory.Ip];
-                // Console.WriteLine(inst.Method.Name);
-                inst();
-            } while (Memory.Ip < instructionsCount);
+            int instructionsCount = instructions.Count;
+            for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++)
+                instructions[Memory.Ip]();
         }
 #if !DEBUG
         catch (Exception ex)
@@ -71,40 +64,40 @@ public partial class VmRuntime
     private List<Instruction> GenerateDictToExecute()
     {
         int ip = 0;
-        byte operation = Memory.MemoryArray[ip];
+        InstructionName operation = Memory.MemoryArray[ip];
 
         List<Instruction> instructions = new();
 
-        while (operation != (byte)InstructionName.End)
+        while (operation != InstructionName.End)
         {
             Instruction instr = operation switch
             {
-                (byte)InstructionName.Add => Add,
-                (byte)InstructionName.Sub => Sub,
-                (byte)InstructionName.Multiply => Mul,
-                (byte)InstructionName.Divide => Div,
-                (byte)InstructionName.Equals => Equals,
-                (byte)InstructionName.Not => Not,
-                (byte)InstructionName.JumpIfZero => JumpIfZero,
-                (byte)InstructionName.JumpIfNotZero => JumpIfNotZero,
-                (byte)InstructionName.SetVariable => SetVariable,
-                (byte)InstructionName.LoadVariable => LoadVariable,
-                (byte)InstructionName.CallMethod => CallMethod,
-                (byte)InstructionName.Duplicate => Duplicate,
-                (byte)InstructionName.LessThan => LessThan,
-                (byte)InstructionName.GreatThan => GreatThan,
-                (byte)InstructionName.Halt => Halt,
-                (byte)InstructionName.Ret => Ret,
-                (byte)InstructionName.Drop => Drop,
-                (byte)InstructionName.PushAddress => PushAddress,
-                (byte)InstructionName.Jump => Jump,
-                (byte)InstructionName.CreateVariable => CreateVariable,
-                (byte)InstructionName.CopyVariable => CopyVariable,
-                (byte)InstructionName.PushConstant => PushConstant,
-                (byte)InstructionName.DeleteVariable => DeleteVariable,
-                (byte)InstructionName.NoOperation => NoOperation,
-                (byte)InstructionName.GetByIndex => GetByIndex,
-                _ or 0 => throw new InvalidOperationException($"unknown instruction - {(InstructionName)operation}")
+                InstructionName.Add => Add,
+                InstructionName.Sub => Sub,
+                InstructionName.Multiply => Mul,
+                InstructionName.Divide => Div,
+                InstructionName.Equals => Equals,
+                InstructionName.Not => Not,
+                InstructionName.JumpIfZero => JumpIfZero,
+                InstructionName.JumpIfNotZero => JumpIfNotZero,
+                InstructionName.SetVariable => SetVariable,
+                InstructionName.LoadVariable => LoadVariable,
+                InstructionName.CallMethod => CallMethod,
+                InstructionName.Duplicate => Duplicate,
+                InstructionName.LessThan => LessThan,
+                InstructionName.GreatThan => GreatThan,
+                InstructionName.Halt => Halt,
+                InstructionName.Ret => Ret,
+                InstructionName.Drop => Drop,
+                InstructionName.PushAddress => PushAddress,
+                InstructionName.Jump => Jump,
+                InstructionName.CreateVariable => CreateVariable,
+                InstructionName.CopyVariable => CopyVariable,
+                InstructionName.PushConstant => PushConstant,
+                InstructionName.DeleteVariable => DeleteVariable,
+                InstructionName.NoOperation => NoOperation,
+                InstructionName.GetByIndex => GetByIndex,
+                _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);
 
@@ -122,6 +115,8 @@ public partial class VmRuntime
 
         _pointersToInsertVariables = image.GetPointersToInsertVariables();
         _assemblyManager = image.AssemblyManager;
+
+        _instructions = GenerateDictToExecute();
     }
 
     public void PrintState()
@@ -182,6 +177,7 @@ public partial class VmRuntime
             case null:
                 return "null";
             case decimal i:
+                i = decimal.Round(i, 23);
                 return i.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
             case string s:
                 return s;

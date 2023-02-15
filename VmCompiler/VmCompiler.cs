@@ -6,12 +6,12 @@ using VirtualMachine;
 public class VmCompiler
 {
     private readonly VmImage _image;
-    private string? _labelName = "label0";
+    private string _labelName = "label0";
     private List<Token> _tokens = new();
 
-    public VmCompiler(string mainLibPath)
+    public VmCompiler(AssemblyManager assemblyManager)
     {
-        _image = new VmImage(mainLibPath);
+        _image = new VmImage(assemblyManager);
     }
 
     public VmImage Compile(List<Token> tokens)
@@ -25,7 +25,7 @@ public class VmCompiler
 
     private void CompileEqualsSign(ref int i)
     {
-        string? varName = _tokens[i - 1].Text;
+        string varName = _tokens[i - 1].Text;
 
         i++;
         CompileNextBlock(ref i, TokenType.NewLine | TokenType.Comma | TokenType.CloseParentheses);
@@ -52,8 +52,8 @@ public class VmCompiler
         */
 
 
-        string? loopLabel = GetNextLabelName();
-        string? endOfLoopLabel = GetNextLabelName();
+        string loopLabel = GetNextLabelName();
+        string endOfLoopLabel = GetNextLabelName();
 
         i += 2;
         CompileNextBlock(ref i, TokenType.Comma);
@@ -80,7 +80,7 @@ public class VmCompiler
 
             switch (_tokens[i].TokenType)
             {
-                case TokenType.Variable:
+                case TokenType.Variable when _tokens[i + 1].TokenType != TokenType.EqualsSign:
                     _image.LoadVariable(_tokens[i].Text);
                     break;
                 case TokenType.LessThan:
@@ -150,8 +150,8 @@ public class VmCompiler
         i++;
         CompileNextBlock(ref i, TokenType.NewLine);
 
-        string? labelNameElse = GetNextLabelName();
-        string? labelNameEnd = GetNextLabelName();
+        string labelNameElse = GetNextLabelName();
+        string labelNameEnd = GetNextLabelName();
 
         _image.Goto(labelNameElse, InstructionName.JumpIfZero);
         CompileNextBlock(ref i, TokenType.End | TokenType.Else);
@@ -163,12 +163,12 @@ public class VmCompiler
     }
 
 
-    private string? GetNextLabelName()
+    private string GetNextLabelName()
     {
         return GenerateName(ref _labelName);
     }
 
-    private static string? GenerateName(ref string? name)
+    private static string GenerateName(ref string name)
     {
         int number = Convert.ToInt32(name[^1].ToString());
         int next = number + 1;

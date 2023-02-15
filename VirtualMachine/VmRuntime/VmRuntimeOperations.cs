@@ -8,6 +8,9 @@ using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
+    private static int _varId;
+    private readonly Predicate<VmVariable> _predicate = x => x.Id == _varId;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Not()
     {
@@ -146,20 +149,21 @@ public partial class VmRuntime
 
     private void SetVariable()
     {
-        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out int varId))
+        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out _varId))
             throw new InvalidOperationException($"variable with id {Memory.Ip} not found");
 
-        VmVariable vmVariable = _variables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
+        VmVariable vmVariable = _variables.FindLast(_predicate) ?? throw new InvalidOperationException();
         vmVariable.ChangeValue(Memory.Pop());
     }
+
 
     private void LoadVariable()
     {
         int ip = Memory.Ip;
-        if (!_pointersToInsertVariables.TryGetValue(ip, out int varId))
+        if (!_pointersToInsertVariables.TryGetValue(ip, out _varId))
             throw new InvalidOperationException($"variable with id {ip} not found");
 
-        VmVariable value = _variables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
+        VmVariable value = _variables.FindLast(_predicate) ?? throw new InvalidOperationException();
         Memory.Push(value.Value);
     }
 
@@ -242,7 +246,7 @@ public partial class VmRuntime
         _variables.Add(var with { Name = GetNextName(var.Name) });
     }
 
-    private static string GetNextName(string? varName)
+    private static string GetNextName(string varName)
     {
         if (IsNumber().IsMatch(varName[^1].ToString()))
             return varName[..^1] + (int.Parse(varName[^1].ToString()) + 1);

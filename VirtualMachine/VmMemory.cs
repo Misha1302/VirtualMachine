@@ -2,14 +2,13 @@
 
 public record VmMemory
 {
-    private const int MaxStackSize = 100_000;
     private readonly Stack<object?> _stack = new(0xFFF);
-    public Dictionary<int, object?> Constants = new(16);
     public readonly Stack<int> RecursionStack = new(0xFFF);
+    public Dictionary<int, object?> Constants = new(16);
 
     public int Ip;
 
-    public byte[] MemoryArray = Array.Empty<byte>();
+    public InstructionName[] MemoryArray = Array.Empty<InstructionName>();
 
     public Stack<object?> GetStack()
     {
@@ -18,7 +17,6 @@ public record VmMemory
 
     public void Push(object? obj)
     {
-        if (_stack.Count >= MaxStackSize) throw new Exception("Stack overflow");
         _stack.Push(obj);
     }
 

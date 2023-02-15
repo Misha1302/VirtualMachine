@@ -89,13 +89,13 @@ public static class Lexer
         };
         if (token != null) return token;
 
-        if (trimmedCode.StartsWithAny(_words, out KeyValuePair<string?, TokenType> word))
+        if (trimmedCode.StartsWithAny(_words, out KeyValuePair<string, TokenType> word))
             return ReturnWord(word);
 
         return new Token(TokenType.Unknown, _code[_position++].ToString());
     }
 
-    private static Token ReturnWord(KeyValuePair<string?, TokenType> word)
+    private static Token ReturnWord(KeyValuePair<string, TokenType> word)
     {
         _position += word.Key.Length;
         return new Token(word.Value, word.Key);
@@ -113,7 +113,7 @@ public static class Lexer
         int startOfStringIndex = _position;
         int endOfStringIndex = Regex.Match(_code[_position..], "(\n|\r\n)").Index + startOfStringIndex;
 
-        string? str = _code[startOfStringIndex..endOfStringIndex];
+        string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length + 1;
         return new Token(TokenType.Comment, str, str);
     }
@@ -129,10 +129,9 @@ public static class Lexer
         StringBuilder numberString = new();
         char ch;
         _position--;
-        while (char.IsDigit(ch = _code[++_position]) || ch == '.') numberString.Append(ch);
+        while (char.IsDigit(ch = _code[++_position]) || ch is '.' or '_') numberString.Append(ch);
 
-        string? str = numberString.ToString().Replace('.', ',');
-        _position += str.Length - 1;
+        string str = numberString.ToString().Replace('.', ',').Replace("_", "");
         return new Token(TokenType.Number, str, decimal.Parse(str));
     }
 
@@ -142,7 +141,7 @@ public static class Lexer
         int startOfStringIndex = _position;
         int endOfStringIndex = Regex.Match(_code[_position..], "(?<!(\\\\))'").Index + startOfStringIndex;
 
-        string? str = _code[startOfStringIndex..endOfStringIndex];
+        string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length + 1;
         return new Token(TokenType.String, str, str);
     }

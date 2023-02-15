@@ -8,7 +8,7 @@ public class AssemblyManager
     public delegate void CallingDelegate(VmRuntime.VmRuntime vmRuntime);
 
     private readonly List<CallingDelegate> _methods = new();
-    public readonly List<string?> ImportedMethods = new();
+    public readonly Dictionary<string, int> ImportedMethods = new();
 
     public CallingDelegate GetMethodByIndex(int index)
     {
@@ -19,7 +19,7 @@ public class AssemblyManager
     [UnconditionalSuppressMessage("Trimming",
         "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require object access otherwise can break functionality when trimming application code",
         Justification = "<Pending>")]
-    public void ImportMethodFromAssembly(string dllPath, string? methodName)
+    public void ImportMethodFromAssembly(string dllPath, string methodName)
     {
         Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(dllPath));
         Type? @class = assembly.GetType("Library.Library");
@@ -28,8 +28,9 @@ public class AssemblyManager
         MethodInfo method = @class.GetMethod(methodName) ?? throw new Exception($"Method '{methodName}' not found");
         lock (_methods)
         {
+            int methodsCount = _methods.Count;
             _methods.Add(method.CreateDelegate<CallingDelegate>());
-            ImportedMethods.Add(method.Name);
+            ImportedMethods.Add(method.Name, methodsCount);
         }
     }
 #pragma warning restore IL2075

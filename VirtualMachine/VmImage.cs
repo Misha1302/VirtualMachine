@@ -1,6 +1,5 @@
 ﻿namespace VirtualMachine;
 
-using System.Reflection;
 using global::VirtualMachine.Variables;
 
 public class VmImage
@@ -8,22 +7,19 @@ public class VmImage
     private const int BaseProgramSize = 128;
 
     private readonly List<(string, int)> _goto;
-    private readonly Dictionary<string, int> _importedMethodsIndexes;
     private readonly Dictionary<string, int> _labels;
     private readonly VmMemory _memory;
     private readonly Dictionary<int, int> _pointersToInsertVariables;
     private readonly List<VmVariable> _variables;
     public readonly AssemblyManager AssemblyManager;
 
-    private int _index;
     private int _ip;
 
-    private string? _labelName = "label0";
-    private string? _varName = "var0";
+    private string _labelName = "label0";
+    private string _varName = "var0";
 
-    public VmImage(string mainLibraryPath)
+    public VmImage(AssemblyManager? assemblyManager = null)
     {
-        _importedMethodsIndexes = new Dictionary<string, int>();
         AssemblyManager = new AssemblyManager();
         _variables = new List<VmVariable>();
         _pointersToInsertVariables = new Dictionary<int, int>();
@@ -32,36 +28,18 @@ public class VmImage
 
         _memory = new VmMemory
         {
-            MemoryArray = new byte[BaseProgramSize],
+            MemoryArray = new InstructionName[BaseProgramSize],
             Ip = 0
         };
 
         _ip = 0;
-        _index = 0;
 
-
-        Init(mainLibraryPath);
-    }
-
-    private void Init(string mainLibraryPath)
-    {
-        Assembly assembly = Assembly.LoadFrom(mainLibraryPath);
-        Type @class = assembly.GetType("Library.Library") ?? throw new InvalidOperationException();
-        IEnumerable<MethodInfo> methods = @class.GetMethods()
-            .Where(x =>
-            {
-                ParameterInfo[] parameters = x.GetParameters();
-                if (parameters.Length == 0) return false;
-                return parameters[0].ParameterType == typeof(VmRuntime.VmRuntime);
-            });
-
-        foreach (MethodInfo method in methods)
-            ImportMethodFromAssembly(mainLibraryPath, method.Name);
+        if (assemblyManager is not null) AssemblyManager = assemblyManager;
     }
 
     public void WriteNextOperation(InstructionName operation)
     {
-        _memory.MemoryArray[_ip] = (byte)operation;
+        _memory.MemoryArray[_ip] = operation;
         _ip++;
 
         IncreaseMemArrayIfItNeed();
@@ -69,7 +47,7 @@ public class VmImage
 
     public void WriteNextOperation(InstructionName operation, object? arg)
     {
-        _memory.MemoryArray[_ip] = (byte)operation;
+        _memory.MemoryArray[_ip] = operation;
         _ip++;
 
         IncreaseMemArrayIfItNeed();
@@ -103,7 +81,7 @@ public class VmImage
     public VmMemory GetMemory()
     {
         Dictionary<int, object?> constants = _memory.Constants.ToDictionary(entry => entry.Key, entry => entry.Value);
-        byte[] memArray = (byte[])_memory.MemoryArray.Clone();
+        InstructionName[] memArray = (InstructionName[])_memory.MemoryArray.Clone();
 
         WriteNextOperation(InstructionName.End);
         _ip--;
@@ -124,14 +102,14 @@ public class VmImage
 
     private void ReplaceGoto()
     {
-        foreach ((string? key, int position) in _goto)
+        foreach ((string key, int position) in _goto)
         {
             int value = _labels[key];
             WriteNextConstant(value, position);
         }
     }
 
-    public void CreateVariable(string? varName)
+    public void CreateVariable(string varName)
     {
         VmVariable? var = _variables.FindLast(x => x.Name == varName);
 
@@ -148,7 +126,7 @@ public class VmImage
         _variables.Add(var);
     }
 
-    public void SetVariable(string? varName)
+    public void SetVariable(string varName)
     {
         WriteNextOperation(InstructionName.SetVariable);
 
@@ -156,7 +134,7 @@ public class VmImage
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
-    public void LoadVariable(string? varName)
+    public void LoadVariable(string varName)
     {
         WriteNextOperation(InstructionName.LoadVariable);
 
@@ -164,12 +142,12 @@ public class VmImage
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
-    public void SetLabel(string? label)
+    public void SetLabel(string label)
     {
         _labels.Add(label, _ip - 1);
     }
 
-    public void Goto(string? label, InstructionName jumpInstruction)
+    public void Goto(string label, InstructionName jumpInstruction)
     {
         _goto.Add((label, _ip));
         WriteNextOperation(InstructionName.PushConstant);
@@ -181,24 +159,22 @@ public class VmImage
         return _pointersToInsertVariables;
     }
 
-    public void ImportMethodFromAssembly(string dllPath, string? methodName)
+    public void ImportMethodFromAssembly(string dllPath, string methodName)
     {
-        if (_importedMethodsIndexes.ContainsKey(methodName)) return;
+        if (AssemblyManager.ImportedMethods.ContainsKey(methodName)) return;
 
         AssemblyManager.ImportMethodFromAssembly(dllPath, methodName);
-        _importedMethodsIndexes.Add(methodName, _index);
-        _index++;
     }
 
 
-    public void CreateFunction(string? name, string?[] parameters, Action body)
+    public void CreateFunction(string name, string[] parameters, Action body)
     {
         WriteNextOperation(InstructionName.Halt);
 
         SetLabel(name);
 
         parameters = parameters.Reverse().ToArray();
-        foreach (string? parameter in parameters)
+        foreach (string parameter in parameters)
         {
             CreateVariable(parameter);
             SetVariable(parameter);
@@ -206,13 +182,13 @@ public class VmImage
 
         body();
 
-        foreach (string? parameter in parameters)
+        foreach (string parameter in parameters)
             DeleteVariable(parameter);
 
         WriteNextOperation(InstructionName.Ret);
     }
 
-    public void Call(string? funcName)
+    public void Call(string funcName)
     {
         // 1. push return address
         // 2. goto to label
@@ -220,7 +196,7 @@ public class VmImage
         Goto(funcName, InstructionName.Jump);
     }
 
-    public void DeleteVariable(string? varName)
+    public void DeleteVariable(string varName)
     {
         int varId = (_variables.FindLast(x => x.Name == varName) ?? throw new InvalidOperationException()).Id;
         WriteNextOperation(InstructionName.DeleteVariable, varId);
@@ -228,8 +204,8 @@ public class VmImage
 
     public void ForLoop(Action start, Action condition, Action end, Action body)
     {
-        string? loopLabel = GetNextLabelName();
-        string? endOfLoopLabel = GetNextLabelName();
+        string loopLabel = GetNextLabelName();
+        string endOfLoopLabel = GetNextLabelName();
 
         start();
         SetLabel(loopLabel);
@@ -241,9 +217,9 @@ public class VmImage
         SetLabel(endOfLoopLabel);
     }
 
-    public void Repeat(Action start, Action<string?> body, Action upperBound)
+    public void Repeat(Action start, Action<string> body, Action upperBound)
     {
-        string? varName = GenerateNextVarName();
+        string varName = GenerateNextVarName();
 
         ForLoop(
             () =>
@@ -272,17 +248,17 @@ public class VmImage
         );
     }
 
-    private string? GenerateNextVarName()
+    private string GenerateNextVarName()
     {
         return GenerateName(ref _varName);
     }
 
-    private string? GetNextLabelName()
+    private string GetNextLabelName()
     {
         return GenerateName(ref _labelName);
     }
 
-    private static string? GenerateName(ref string? name)
+    private static string GenerateName(ref string name)
     {
         int number = Convert.ToInt32(name[^1].ToString());
         int next = number + 1;
@@ -293,8 +269,8 @@ public class VmImage
         return name;
     }
 
-    public void CallForeignMethod(string? name)
+    public void CallForeignMethod(string name)
     {
-        WriteNextOperation(InstructionName.CallMethod, _importedMethodsIndexes[name]);
+        WriteNextOperation(InstructionName.CallMethod, AssemblyManager.ImportedMethods[name]);
     }
 }

@@ -5,17 +5,19 @@ using Tokenizer.Token;
 public static class Extension
 {
     public static bool StartsWithAny(this string s, IReadOnlyDictionary<string, TokenType> words,
-        out KeyValuePair<string, TokenType> word)
+        out KeyValuePair<string?, TokenType> word)
     {
-        IOrderedEnumerable<KeyValuePair<string, TokenType>> sortedDict =
-            words.OrderBy(entry => entry.Key.Length);
+        List<KeyValuePair<string?, TokenType>> sortedDict =
+            words.OrderBy(x => x.Key.Length).ToList();
 
-        foreach (KeyValuePair<string, TokenType> item in sortedDict)
-            if (s.StartsWith(item.Key))
-            {
-                word = item;
-                return true;
-            }
+        for (int index = sortedDict.Count - 1; index >= 0; index--)
+        {
+            KeyValuePair<string?, TokenType> item = sortedDict[index];
+            if (!s.StartsWith(item.Key)) continue;
+            
+            word = item;
+            return true;
+        }
 
         word = default;
         return false;

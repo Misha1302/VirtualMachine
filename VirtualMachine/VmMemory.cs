@@ -1,14 +1,14 @@
 ﻿namespace VirtualMachine;
 
-[Serializable]
 public record VmMemory
 {
-    private Stack<object?> _stack = new(16);
+    private const int MaxStackSize = 100_000;
+    private readonly Stack<object?> _stack = new(0xFFF);
     public Dictionary<int, object?> Constants = new(16);
+    public readonly Stack<int> RecursionStack = new(0xFFF);
 
-    public int InstructionPointer;
+    public int Ip;
 
-    public int MaxStackSize = 1_000_000;
     public byte[] MemoryArray = Array.Empty<byte>();
 
     public Stack<object?> GetStack()
@@ -18,7 +18,7 @@ public record VmMemory
 
     public void Push(object? obj)
     {
-        if (_stack.Count > MaxStackSize) throw new Exception("Stack overflow");
+        if (_stack.Count >= MaxStackSize) throw new Exception("Stack overflow");
         _stack.Push(obj);
     }
 

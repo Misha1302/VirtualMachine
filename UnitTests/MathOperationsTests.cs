@@ -97,7 +97,7 @@ public class MathOperationsTests
         Test(5, "Hi", InstructionName.Add, 5 + "Hi");
     }
 
-    private static void Test(object a, object b, InstructionName instruction, object expected)
+    private static void Test(object? a, object? b, InstructionName instruction, object expected)
     {
         VmImage vmImage = new(Constants.MainLibraryPath);
 

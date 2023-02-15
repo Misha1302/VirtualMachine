@@ -72,7 +72,7 @@ public class LoopTests
     {
         VmImage vmImage = new(Constants.MainLibraryPath);
 
-        const string varName = "i";
+        const string? varName = "i";
 
         vmImage.ForLoop(
             () =>

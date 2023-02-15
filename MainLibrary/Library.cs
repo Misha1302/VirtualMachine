@@ -7,15 +7,66 @@ using VirtualMachine.VmRuntime;
 
 public static class Library
 {
-    public static void Print(VmRuntime vmRuntime)
+    public static void PrintLn(VmRuntime vmRuntime)
     {
         object? obj = vmRuntime.Memory.Pop();
         Console.WriteLine(VmRuntime.ObjectToString(obj));
     }
 
-    private static string NumberToString(decimal m)
+    public static void Print(VmRuntime vmRuntime)
     {
-        return m.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
+        object? obj = vmRuntime.Memory.Pop();
+        Console.Write(VmRuntime.ObjectToString(obj));
+    }
+
+    public static void ValueToString(VmRuntime vmRuntime)
+    {
+        object? obj = vmRuntime.Memory.Pop();
+        vmRuntime.Memory.Push(VmRuntime.ObjectToString(obj));
+    }
+
+    public static void ToCharArray(VmRuntime vmRuntime)
+    {
+        object? obj = vmRuntime.Memory.Pop();
+        string str = (string)(obj ?? throw new InvalidOperationException());
+        vmRuntime.Memory.Push(str.ToCharArray().Select(x => (object)x).ToList());
+    }
+
+    public static void Reverse(VmRuntime vmRuntime)
+    {
+        object? obj = vmRuntime.Memory.Pop();
+        if (obj is List<object?> list)
+        {
+            List<object?> newList = new(list.Count);
+            if (list.Count == 0)
+            {
+                vmRuntime.Memory.Push(newList);
+                return;
+            }
+
+            if (list[0] is ICloneable)
+                list.ForEach(item =>
+                {
+                    if (item is null)
+                    {
+                        newList.Add(null);
+                    }
+                    else
+                    {
+                        object? clone = ((ICloneable)item).Clone();
+                        newList.Add(clone);
+                    }
+                });
+            else
+                list.ForEach(item => newList.Add(item));
+
+            newList.Reverse();
+            vmRuntime.Memory.Push(newList);
+        }
+        else
+        {
+            vmRuntime.Memory.Push(((string)(obj ?? throw new InvalidOperationException())).Reverse());
+        }
     }
 
     public static void Input(VmRuntime vmRuntime)
@@ -23,7 +74,7 @@ public static class Library
         vmRuntime.Memory.Push(Console.ReadLine());
     }
 
-    public static void To(VmRuntime vmRuntime)
+    public static void StringToNumber(VmRuntime vmRuntime)
     {
         object memoryARegister = vmRuntime.Memory.Pop() ?? throw new NullReferenceException();
 

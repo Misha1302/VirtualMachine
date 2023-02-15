@@ -28,5 +28,7 @@ public enum InstructionName : byte
     CopyVariable,
     DeleteVariable,
     NoOperation,
-    GetByIndex
+    GetByIndex,
+    GreatThan,
+    Drop
 }

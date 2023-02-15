@@ -47,25 +47,15 @@ public partial class VmRuntime
 #if !DEBUG
         try
 #endif
-#if DEBUG
-        // ReSharper disable once CollectionNeverQueried.Local
-        List<string> debugList = new();
-#endif
         {
-            Memory.InstructionPointer = -1;
+            Memory.Ip = -1;
             do
             {
-                Memory.InstructionPointer++;
-                Instruction inst = instructions[Memory.InstructionPointer];
+                Memory.Ip++;
+                Instruction inst = instructions[Memory.Ip];
+                // Console.WriteLine(inst.Method.Name);
                 inst();
-#if DEBUG
-                string name = inst.Method.Name;
-                // object? unused = Memory.Stack.Peek();
-                int unused1 = Memory.InstructionPointer;
-                if (debugList.Count > 1000) debugList.RemoveAt(0);
-                debugList.Add(name);
-#endif
-            } while (Memory.InstructionPointer < instructionsCount);
+            } while (Memory.Ip < instructionsCount);
         }
 #if !DEBUG
         catch (Exception ex)
@@ -102,8 +92,10 @@ public partial class VmRuntime
                 (byte)InstructionName.CallMethod => CallMethod,
                 (byte)InstructionName.Duplicate => Duplicate,
                 (byte)InstructionName.LessThan => LessThan,
+                (byte)InstructionName.GreatThan => GreatThan,
                 (byte)InstructionName.Halt => Halt,
                 (byte)InstructionName.Ret => Ret,
+                (byte)InstructionName.Drop => Drop,
                 (byte)InstructionName.PushAddress => PushAddress,
                 (byte)InstructionName.Jump => Jump,
                 (byte)InstructionName.CreateVariable => CreateVariable,
@@ -193,13 +185,15 @@ public partial class VmRuntime
                 return i.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
             case string s:
                 return s;
+            case List<object> list when list.All(x => x is char):
+                return new string(list.Select(x => (char)x).ToArray());
             case IEnumerable collection:
             {
                 StringBuilder stringBuilder = new();
                 stringBuilder.Append('[');
                 foreach (object? item in collection)
                 {
-                    string? str = item switch
+                    string str = item switch
                     {
                         null => "null, ",
                         decimal m => $"{NumberToString(m)}, ",
@@ -215,7 +209,9 @@ public partial class VmRuntime
             }
         }
 
-        return (string)obj;
+        if (obj is IFormattable f)
+            return f.ToString(null, null);
+        return obj.ToString() ?? string.Empty;
     }
 
     private delegate void Instruction();

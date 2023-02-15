@@ -8,8 +8,6 @@ using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
-    private readonly Stack<int> _recursionStack = new();
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Not()
     {
@@ -28,9 +26,10 @@ public partial class VmRuntime
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Equals()
     {
-        ReadTwoNumbers(out decimal a, out decimal b);
+        object? a = Memory.Pop();
+        object? b = Memory.Pop();
 
-        Memory.Push(a.IsEquals(b));
+        Memory.Push(a?.Equals(b));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -118,7 +117,7 @@ public partial class VmRuntime
             }
             else
             {
-                Memory.Push(ObjectToString(b) + str1);
+                Memory.Push(ObjectToString(a) + str1);
             }
         }
         else
@@ -147,8 +146,8 @@ public partial class VmRuntime
 
     private void SetVariable()
     {
-        if (!_pointersToInsertVariables.TryGetValue(Memory.InstructionPointer, out int varId))
-            throw new InvalidOperationException($"variable with id {Memory.InstructionPointer} not found");
+        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out int varId))
+            throw new InvalidOperationException($"variable with id {Memory.Ip} not found");
 
         VmVariable vmVariable = _variables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
         vmVariable.ChangeValue(Memory.Pop());
@@ -156,7 +155,7 @@ public partial class VmRuntime
 
     private void LoadVariable()
     {
-        int ip = Memory.InstructionPointer;
+        int ip = Memory.Ip;
         if (!_pointersToInsertVariables.TryGetValue(ip, out int varId))
             throw new InvalidOperationException($"variable with id {ip} not found");
 
@@ -166,7 +165,7 @@ public partial class VmRuntime
 
     private void CallMethod()
     {
-        object obj = Memory.Constants[Memory.InstructionPointer] ?? throw new InvalidOperationException();
+        object obj = Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException();
 
         int index = obj switch
         {
@@ -185,7 +184,7 @@ public partial class VmRuntime
         {
             case decimal d when !d.IsEquals(0):
             case true:
-                Memory.InstructionPointer = (int)(Memory.Pop() ?? throw new InvalidOperationException());
+                Memory.Ip = (int)(Memory.Pop() ?? throw new InvalidOperationException());
                 break;
         }
     }
@@ -198,7 +197,7 @@ public partial class VmRuntime
         {
             case decimal d when d.IsEquals(0):
             case false:
-                Memory.InstructionPointer = ip;
+                Memory.Ip = ip;
                 break;
         }
     }
@@ -209,35 +208,41 @@ public partial class VmRuntime
         Memory.Push(a < b);
     }
 
+    private void GreatThan()
+    {
+        ReadTwoNumbers(out decimal a, out decimal b);
+        Memory.Push(a > b);
+    }
+
     private void PushAddress()
     {
-        _recursionStack.Push(Memory.InstructionPointer + 2);
+        Memory.RecursionStack.Push(Memory.Ip + 2);
     }
 
     private void Ret()
     {
-        Memory.InstructionPointer = _recursionStack.Pop();
+        Memory.Ip = Memory.RecursionStack.Pop();
     }
 
     private void Halt()
     {
-        Memory.InstructionPointer = int.MaxValue;
+        Memory.Ip = int.MaxValue;
     }
 
     private void Jump()
     {
         object reg = Memory.Pop() ?? throw new InvalidOperationException();
-        Memory.InstructionPointer = reg is int i ? i : (int)(decimal)reg;
+        Memory.Ip = reg is int i ? i : (int)(decimal)reg;
     }
 
     private void CreateVariable()
     {
         VmVariable var =
-            (VmVariable)(Memory.Constants[Memory.InstructionPointer] ?? throw new InvalidOperationException());
+            (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
         _variables.Add(var with { Name = GetNextName(var.Name) });
     }
 
-    private static string GetNextName(string varName)
+    private static string GetNextName(string? varName)
     {
         if (IsNumber().IsMatch(varName[^1].ToString()))
             return varName[..^1] + (int.Parse(varName[^1].ToString()) + 1);
@@ -246,18 +251,19 @@ public partial class VmRuntime
 
     private void PushConstant()
     {
-        object? var = Memory.Constants[Memory.InstructionPointer];
+        object? var = Memory.Constants[Memory.Ip];
         Memory.Push(var);
     }
 
     private void Duplicate()
     {
-        Memory.Push(Memory.Peek());
+        object? peek = Memory.Peek();
+        Memory.Push(peek);
     }
 
     private void CopyVariable()
     {
-        int varId = (int)(decimal)(Memory.Constants[Memory.InstructionPointer] ??
+        int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ??
                                    throw new InvalidOperationException());
         VmVariable var = _variables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
 
@@ -269,7 +275,7 @@ public partial class VmRuntime
 
     private void DeleteVariable()
     {
-        int varId = (int)(decimal)(Memory.Constants[Memory.InstructionPointer] ??
+        int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ??
                                    throw new InvalidOperationException());
 
         int index = _variables.FindLastIndex(x => x.Id == varId);
@@ -287,5 +293,10 @@ public partial class VmRuntime
         IList obj0 = (List<object?>)(list ?? throw new InvalidOperationException());
         object? value = obj0[(int)(decimal)(index ?? throw new InvalidOperationException())];
         Memory.Push(value);
+    }
+
+    private void Drop()
+    {
+        _ = Memory.Pop();
     }
 }

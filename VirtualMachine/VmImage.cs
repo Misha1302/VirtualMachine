@@ -18,8 +18,8 @@ public class VmImage
     private int _index;
     private int _ip;
 
-    private string _labelName = "label0";
-    private string _varName = "var0";
+    private string? _labelName = "label0";
+    private string? _varName = "var0";
 
     public VmImage(string mainLibraryPath)
     {
@@ -33,7 +33,7 @@ public class VmImage
         _memory = new VmMemory
         {
             MemoryArray = new byte[BaseProgramSize],
-            InstructionPointer = 0
+            Ip = 0
         };
 
         _ip = 0;
@@ -112,7 +112,7 @@ public class VmImage
         VmMemory memToReturn = new()
         {
             Constants = _memory.Constants,
-            InstructionPointer = 0,
+            Ip = 0,
             MemoryArray = _memory.MemoryArray
         };
 
@@ -124,14 +124,14 @@ public class VmImage
 
     private void ReplaceGoto()
     {
-        foreach ((string key, int position) in _goto)
+        foreach ((string? key, int position) in _goto)
         {
             int value = _labels[key];
             WriteNextConstant(value, position);
         }
     }
 
-    public void CreateVariable(string varName)
+    public void CreateVariable(string? varName)
     {
         VmVariable? var = _variables.FindLast(x => x.Name == varName);
 
@@ -148,7 +148,7 @@ public class VmImage
         _variables.Add(var);
     }
 
-    public void SetVariable(string varName)
+    public void SetVariable(string? varName)
     {
         WriteNextOperation(InstructionName.SetVariable);
 
@@ -156,7 +156,7 @@ public class VmImage
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
-    public void LoadVariable(string varName)
+    public void LoadVariable(string? varName)
     {
         WriteNextOperation(InstructionName.LoadVariable);
 
@@ -164,12 +164,12 @@ public class VmImage
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
-    public void SetLabel(string label)
+    public void SetLabel(string? label)
     {
         _labels.Add(label, _ip - 1);
     }
 
-    public void Goto(string label, InstructionName jumpInstruction)
+    public void Goto(string? label, InstructionName jumpInstruction)
     {
         _goto.Add((label, _ip));
         WriteNextOperation(InstructionName.PushConstant);
@@ -181,7 +181,7 @@ public class VmImage
         return _pointersToInsertVariables;
     }
 
-    public void ImportMethodFromAssembly(string dllPath, string methodName)
+    public void ImportMethodFromAssembly(string dllPath, string? methodName)
     {
         if (_importedMethodsIndexes.ContainsKey(methodName)) return;
 
@@ -191,14 +191,14 @@ public class VmImage
     }
 
 
-    public void CreateFunction(string name, string[] parameters, Action body)
+    public void CreateFunction(string? name, string?[] parameters, Action body)
     {
         WriteNextOperation(InstructionName.Halt);
 
         SetLabel(name);
 
         parameters = parameters.Reverse().ToArray();
-        foreach (string parameter in parameters)
+        foreach (string? parameter in parameters)
         {
             CreateVariable(parameter);
             SetVariable(parameter);
@@ -206,13 +206,13 @@ public class VmImage
 
         body();
 
-        foreach (string parameter in parameters)
+        foreach (string? parameter in parameters)
             DeleteVariable(parameter);
 
         WriteNextOperation(InstructionName.Ret);
     }
 
-    public void Call(string funcName)
+    public void Call(string? funcName)
     {
         // 1. push return address
         // 2. goto to label
@@ -220,7 +220,7 @@ public class VmImage
         Goto(funcName, InstructionName.Jump);
     }
 
-    public void DeleteVariable(string varName)
+    public void DeleteVariable(string? varName)
     {
         int varId = (_variables.FindLast(x => x.Name == varName) ?? throw new InvalidOperationException()).Id;
         WriteNextOperation(InstructionName.DeleteVariable, varId);
@@ -228,8 +228,8 @@ public class VmImage
 
     public void ForLoop(Action start, Action condition, Action end, Action body)
     {
-        string loopLabel = GetNextLabelName();
-        string endOfLoopLabel = GetNextLabelName();
+        string? loopLabel = GetNextLabelName();
+        string? endOfLoopLabel = GetNextLabelName();
 
         start();
         SetLabel(loopLabel);
@@ -241,9 +241,9 @@ public class VmImage
         SetLabel(endOfLoopLabel);
     }
 
-    public void Repeat(Action start, Action<string> body, Action upperBound)
+    public void Repeat(Action start, Action<string?> body, Action upperBound)
     {
-        string varName = GenerateNextVarName();
+        string? varName = GenerateNextVarName();
 
         ForLoop(
             () =>
@@ -272,17 +272,17 @@ public class VmImage
         );
     }
 
-    private string GenerateNextVarName()
+    private string? GenerateNextVarName()
     {
         return GenerateName(ref _varName);
     }
 
-    private string GetNextLabelName()
+    private string? GetNextLabelName()
     {
         return GenerateName(ref _labelName);
     }
 
-    private static string GenerateName(ref string name)
+    private static string? GenerateName(ref string? name)
     {
         int number = Convert.ToInt32(name[^1].ToString());
         int next = number + 1;
@@ -293,7 +293,7 @@ public class VmImage
         return name;
     }
 
-    public void CallForeignMethod(string name)
+    public void CallForeignMethod(string? name)
     {
         WriteNextOperation(InstructionName.CallMethod, _importedMethodsIndexes[name]);
     }

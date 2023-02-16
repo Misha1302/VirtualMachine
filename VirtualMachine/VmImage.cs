@@ -10,7 +10,7 @@ public class VmImage
     private readonly Dictionary<string, int> _labels;
     private readonly VmMemory _memory;
     private readonly Dictionary<int, int> _pointersToInsertVariables;
-    private readonly List<VmVariable> _variables;
+    public readonly List<VmVariable> Variables;
     public readonly AssemblyManager AssemblyManager;
 
     private int _ip;
@@ -21,7 +21,7 @@ public class VmImage
     public VmImage(AssemblyManager? assemblyManager = null)
     {
         AssemblyManager = new AssemblyManager();
-        _variables = new List<VmVariable>();
+        Variables = new List<VmVariable>();
         _pointersToInsertVariables = new Dictionary<int, int>();
         _labels = new Dictionary<string, int>();
         _goto = new List<(string, int)>();
@@ -111,7 +111,7 @@ public class VmImage
 
     public void CreateVariable(string varName)
     {
-        VmVariable? var = _variables.FindLast(x => x.Name == varName);
+        VmVariable? var = Variables.FindLast(x => x.Name == varName);
 
         if (var is not null)
         {
@@ -123,14 +123,14 @@ public class VmImage
             WriteNextOperation(InstructionName.CreateVariable, var);
         }
 
-        _variables.Add(var);
+        Variables.Add(var);
     }
 
     public void SetVariable(string varName)
     {
         WriteNextOperation(InstructionName.SetVariable);
 
-        VmVariable keyValuePair = _variables.First(x => x.Name == varName);
+        VmVariable keyValuePair = Variables.First(x => x.Name == varName);
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
@@ -138,7 +138,7 @@ public class VmImage
     {
         WriteNextOperation(InstructionName.LoadVariable);
 
-        VmVariable keyValuePair = _variables.First(x => x.Name == varName);
+        VmVariable keyValuePair = Variables.First(x => x.Name == varName);
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
@@ -198,7 +198,7 @@ public class VmImage
 
     public void DeleteVariable(string varName)
     {
-        int varId = (_variables.FindLast(x => x.Name == varName) ?? throw new InvalidOperationException()).Id;
+        int varId = (Variables.FindLast(x => x.Name == varName) ?? throw new InvalidOperationException()).Id;
         WriteNextOperation(InstructionName.DeleteVariable, varId);
     }
 

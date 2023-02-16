@@ -43,15 +43,8 @@ public class VmCompiler
     }
 
 
-    private void CompileFor(ref int i)
+    private void CompileLoop(ref int i)
     {
-        /*
-        for(var i = 0, i < q, i = i + 1)
-            Print('Number ' i +)
-        end
-        */
-
-
         string loopLabel = GetNextLabelName();
         string endOfLoopLabel = GetNextLabelName();
 
@@ -63,7 +56,7 @@ public class VmCompiler
         _image.Goto(endOfLoopLabel, InstructionName.JumpIfZero);
 
         int iCopy = i;
-        while (_tokens[i - 1].TokenType != TokenType.CloseParentheses) i++;
+        PassTokensBeforeNext(ref i, TokenType.CloseParentheses | TokenType.NewLine);
         CompileNextBlock(ref i, TokenType.End);
         CompileNextBlock(ref iCopy, TokenType.CloseParentheses | TokenType.NewLine);
 
@@ -71,11 +64,16 @@ public class VmCompiler
         _image.SetLabel(endOfLoopLabel);
     }
 
+    private void PassTokensBeforeNext(ref int i, TokenType endTokens)
+    {
+        while (!endTokens.HasFlag(_tokens[i - 1].TokenType)) i++;
+    }
+
     private void CompileNextBlock(ref int i, TokenType endTokenType)
     {
         while (true)
         {
-            bool contains = _tokens[i].TokenType.IsContains(endTokenType);
+            bool contains = endTokenType.HasFlag(_tokens[i].TokenType);
             if (contains) break;
 
             switch (_tokens[i].TokenType)
@@ -88,6 +86,9 @@ public class VmCompiler
                     break;
                 case TokenType.GreatThan:
                     _image.WriteNextOperation(InstructionName.GreatThan);
+                    break;
+                case TokenType.Modulo:
+                    _image.WriteNextOperation(InstructionName.Modulo);
                     break;
                 case TokenType.IsEquals:
                     _image.WriteNextOperation(InstructionName.Equals);
@@ -125,17 +126,29 @@ public class VmCompiler
                 case TokenType.Divide:
                     _image.WriteNextOperation(InstructionName.Divide);
                     break;
+                case TokenType.Ptr:
+                    CompilePtr(ref i);
+                    break;
                 case TokenType.ForeignMethod:
                     CompileMethod(ref i);
                     i--;
                     break;
-                case TokenType.For:
-                    CompileFor(ref i);
+                case TokenType.Loop:
+                    CompileLoop(ref i);
                     break;
             }
 
             i++;
         }
+    }
+
+    private void CompilePtr(ref int i)
+    {
+        i++;
+        int index = i;
+        int id = _image.Variables.FindLast(x => x.Name == _tokens[index].Text).Id;
+        _image.WriteNextOperation(InstructionName.PushConstant, id);
+        _image.WriteNextOperation(InstructionName.GetPtr);
     }
 
     private void CompileElse(ref int i)

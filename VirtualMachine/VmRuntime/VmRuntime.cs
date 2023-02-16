@@ -9,7 +9,6 @@ using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
-    private readonly List<VmVariable> _variables = new(64);
     private AssemblyManager _assemblyManager;
     private List<Instruction>? _instructions;
 
@@ -74,6 +73,7 @@ public partial class VmRuntime
             {
                 InstructionName.Add => Add,
                 InstructionName.Sub => Sub,
+                InstructionName.Modulo => Modulo,
                 InstructionName.Multiply => Mul,
                 InstructionName.Divide => Div,
                 InstructionName.Equals => Equals,
@@ -97,6 +97,7 @@ public partial class VmRuntime
                 InstructionName.DeleteVariable => DeleteVariable,
                 InstructionName.NoOperation => NoOperation,
                 InstructionName.GetByIndex => GetByIndex,
+                InstructionName.GetPtr => GetPtr,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);
@@ -135,7 +136,7 @@ public partial class VmRuntime
 
 
         outputStringBuilder.Append("Variables={");
-        outputStringBuilder.Append(string.Join(",", _variables.Select(x =>
+        outputStringBuilder.Append(string.Join(",", Memory.GetAllVariables().Select(x =>
         {
             string obj = x.Value switch
             {

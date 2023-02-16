@@ -1,6 +1,6 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
-using System.Collections;
+using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -23,6 +23,8 @@ public partial class VmRuntime
             case bool b:
                 Memory.Push(!b);
                 break;
+            default:
+                throw new StrongTypingException();
         }
     }
 
@@ -49,6 +51,8 @@ public partial class VmRuntime
                 List<object?> strings = s.Split((string)(b ?? string.Empty)).Select(x => (object?)x).ToList();
                 Memory.Push(strings);
                 break;
+            default:
+                throw new StrongTypingException();
         }
     }
 
@@ -75,6 +79,8 @@ public partial class VmRuntime
                     stringBuilder.Append(c);
                 Memory.Push(stringBuilder.ToString());
                 break;
+            default:
+                throw new StrongTypingException();
         }
     }
 
@@ -91,7 +97,16 @@ public partial class VmRuntime
             case string s:
                 Memory.Push(s.Replace((string)(b ?? string.Empty), ""));
                 break;
+            default:
+                throw new StrongTypingException();
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void Modulo()
+    {
+        ReadTwoNumbers(out decimal a, out decimal b);
+        Memory.Push(a % b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -137,6 +152,8 @@ public partial class VmRuntime
                     collection.Add(b);
                     Memory.Push(collection);
                     break;
+                default:
+                    throw new StrongTypingException();
             }
         }
     }
@@ -147,26 +164,30 @@ public partial class VmRuntime
         OnProgramExit?.Invoke(this, error);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SetVariable()
     {
         if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out _varId))
             throw new InvalidOperationException($"variable with id {Memory.Ip} not found");
 
-        VmVariable vmVariable = _variables.FindLast(_predicate) ?? throw new InvalidOperationException();
+        List<VmVariable> allVariables = Memory.GetAllVariables();
+        VmVariable vmVariable = allVariables.FindLast(_predicate) ?? throw new InvalidOperationException();
         vmVariable.ChangeValue(Memory.Pop());
     }
 
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void LoadVariable()
     {
         int ip = Memory.Ip;
         if (!_pointersToInsertVariables.TryGetValue(ip, out _varId))
             throw new InvalidOperationException($"variable with id {ip} not found");
 
-        VmVariable value = _variables.FindLast(_predicate) ?? throw new InvalidOperationException();
+        VmVariable value = Memory.GetAllVariables().FindLast(_predicate) ?? throw new InvalidOperationException();
         Memory.Push(value.Value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CallMethod()
     {
         object obj = Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException();
@@ -181,6 +202,7 @@ public partial class VmRuntime
         _assemblyManager.GetMethodByIndex(index).Invoke(this);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void JumpIfNotZero()
     {
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
@@ -193,6 +215,7 @@ public partial class VmRuntime
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void JumpIfZero()
     {
         int ip = (int)(Memory.Pop() ?? throw new InvalidOperationException());
@@ -206,46 +229,54 @@ public partial class VmRuntime
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void LessThan()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
         Memory.Push(a < b);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GreatThan()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
         Memory.Push(a > b);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PushAddress()
     {
         Memory.RecursionStack.Push(Memory.Ip + 2);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Ret()
     {
         Memory.Ip = Memory.RecursionStack.Pop();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Halt()
     {
         Memory.Ip = int.MaxValue;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Jump()
     {
         object reg = Memory.Pop() ?? throw new InvalidOperationException();
         Memory.Ip = reg is int i ? i : (int)(decimal)reg;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CreateVariable()
     {
         VmVariable var =
             (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
-        _variables.Add(var with { Name = GetNextName(var.Name) });
+        Memory.CreateVariable(var with { Name = GetNextName(var.Name) });
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string GetNextName(string varName)
     {
         if (IsNumber().IsMatch(varName[^1].ToString()))
@@ -253,54 +284,67 @@ public partial class VmRuntime
         return varName + '0';
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void PushConstant()
     {
         object? var = Memory.Constants[Memory.Ip];
         Memory.Push(var);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Duplicate()
     {
         object? peek = Memory.Peek();
         Memory.Push(peek);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CopyVariable()
     {
         int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ??
                                    throw new InvalidOperationException());
-        VmVariable var = _variables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
+        VmVariable var = Memory.GetAllVariables().FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
 
-        _variables.Add(var with { Name = GetNextName(var.Name) });
+        Memory.CreateVariable(var with { Name = GetNextName(var.Name) });
     }
 
     [GeneratedRegex("\\d+")]
     private static partial Regex IsNumber();
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DeleteVariable()
     {
         int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ??
                                    throw new InvalidOperationException());
 
-        int index = _variables.FindLastIndex(x => x.Id == varId);
-        _variables.RemoveAt(index);
+        Memory.DeleteVariable(varId);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void NoOperation()
     {
         // no operation
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GetByIndex()
     {
         ReadTwoValues(out object? list, out object? index);
-        IList obj0 = (List<object?>)(list ?? throw new InvalidOperationException());
+        List<object?> obj0 = (List<object?>)(list ?? throw new InvalidOperationException());
         object? value = obj0[(int)(decimal)(index ?? throw new InvalidOperationException())];
         Memory.Push(value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Drop()
     {
         _ = Memory.Pop();
+    }
+
+    private void GetPtr()
+    {
+        int id = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        ulong offset = Memory.GetAllVariables().FindLast(x => x.Id == id).OffsetPtr;
+        Memory.Push((decimal)offset);
     }
 }

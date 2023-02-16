@@ -25,14 +25,16 @@ public static class Lexer
         { "end", TokenType.End },
         { "import", TokenType.Import },
         { "var", TokenType.Var },
-        { "for", TokenType.For },
+        { "loop", TokenType.Loop },
         { "if", TokenType.If },
         { "else", TokenType.Else },
+        { "ptr", TokenType.Ptr },
 
         { "+", TokenType.Plus },
         { "-", TokenType.Minus },
         { "*", TokenType.Multiply },
         { "/", TokenType.Divide },
+        { "%", TokenType.Modulo },
         { "<", TokenType.LessThan },
         { ">", TokenType.GreatThan },
         { "==", TokenType.IsEquals },
@@ -111,10 +113,11 @@ public static class Lexer
     {
         _position++;
         int startOfStringIndex = _position;
-        int endOfStringIndex = Regex.Match(_code[_position..], "(\n|\r\n)").Index + startOfStringIndex;
+        int endOfStringIndex = Regex.Match(_code[_position..], "(\n|\r\n|\0)").Index + startOfStringIndex;
 
         string str = _code[startOfStringIndex..endOfStringIndex];
-        _position += str.Length + 1;
+        _position += str.Length;
+        
         return new Token(TokenType.Comment, str, str);
     }
 

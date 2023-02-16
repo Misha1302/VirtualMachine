@@ -4,10 +4,11 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj"/>
+        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj" />
     </ItemGroup>
 
 </Project>

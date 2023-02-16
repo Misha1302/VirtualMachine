@@ -2,10 +2,13 @@
 
 namespace Library;
 
+using System.Runtime.CompilerServices;
 using VirtualMachine.VmRuntime;
 
 public static class Library
 {
+    // add memory and pointers
+    // add dynamically create a new instance of external class
     public static void PrintLn(VmRuntime vmRuntime)
     {
         object? obj = vmRuntime.Memory.Pop();
@@ -16,6 +19,26 @@ public static class Library
     {
         object? obj = vmRuntime.Memory.Pop();
         Console.Write(VmRuntime.ObjectToString(obj));
+    }
+
+    public static unsafe void WriteToMemory(VmRuntime vmRuntime)
+    {
+        ulong offset = (ulong)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+
+        fixed (byte* ptr = vmRuntime.Memory.ArrayOfMemory)
+        {
+            object? obj0 = vmRuntime.Memory.Pop();
+            Unsafe.Write(ptr + offset, obj0);
+        }
+    }
+
+    public static unsafe void ReadFromMemory(VmRuntime vmRuntime)
+    {
+        fixed (byte* ptr = vmRuntime.Memory.ArrayOfMemory)
+        {
+            ulong offset = (ulong)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+            vmRuntime.Memory.Push(Unsafe.Read<object?>(ptr + offset));
+        }
     }
 
     public static void ValueToString(VmRuntime vmRuntime)

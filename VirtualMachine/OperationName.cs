@@ -30,5 +30,7 @@ public enum InstructionName : byte
     NoOperation,
     GetByIndex,
     GreatThan,
-    Drop
+    Drop,
+    Modulo,
+    GetPtr
 }

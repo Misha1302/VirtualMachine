@@ -222,10 +222,7 @@ public static class Library
             }
 
             return result;
-        }
-
-
-        // ReSharper disable UnusedMember.Local
+        } // ReSharper disable UnusedMember.Local
         public static decimal Atan2(decimal y, decimal x)
         {
             switch (x)

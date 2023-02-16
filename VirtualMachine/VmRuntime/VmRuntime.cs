@@ -47,7 +47,10 @@ public partial class VmRuntime
         {
             int instructionsCount = instructions.Count;
             for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++)
+            {
+                Console.WriteLine(instructions[Memory.Ip].Method.Name);
                 instructions[Memory.Ip]();
+            }
         }
 #if !DEBUG
         catch (Exception ex)
@@ -161,9 +164,16 @@ public partial class VmRuntime
 
     private void ReadTwoNumbers(out decimal a, out decimal b)
     {
+        Console.WriteLine("$");
         ReadTwoValues(out object? obj0, out object? obj1);
+        Console.WriteLine("$$");
+        Console.WriteLine(obj0.GetType());
+        Console.WriteLine(obj1 is null); // false
+        Console.WriteLine(obj1.GetType()); // error
+        Console.WriteLine("$$$");
         a = (decimal)(obj0 ?? throw new InvalidOperationException());
         b = (decimal)(obj1 ?? throw new InvalidOperationException());
+        Console.WriteLine("$$$$");
     }
 
     private static string NumberToString(decimal m)

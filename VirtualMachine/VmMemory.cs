@@ -31,26 +31,38 @@ public record VmMemory
     public void Push(object? obj)
     {
         _stack[_sp] = obj;
+        Console.Write("@@!!");
+        Console.Write(_stack[_sp].GetType());
+        Console.WriteLine("@@!!");
         _sp++;
     }
 
     public object? Pop()
     {
         _sp--;
-        return _stack[_sp];
+        object? pop = _stack[_sp];
+        Console.Write("@@!");
+        Console.Write(pop.GetType());
+        Console.WriteLine("@@!");
+        return pop;
     }
 
     public object? Peek()
     {
-        return _stack[_sp - 1];
+        object? peek = _stack[_sp - 1];
+        Console.Write("@@");
+        Console.Write(peek.GetType());
+        Console.WriteLine("@@");
+        return peek;
     }
 
     public void CreateVariable(VmVariable vmVariable)
     {
         WriteToMemory(_mp, int.MinValue);
         vmVariable.SetOffsetPtr(_mp, this);
+
         _variables.Add(vmVariable);
-        _mp += sizeof(ulong);
+        _mp += 32;
     }
 
     public List<VmVariable> GetAllVariables()

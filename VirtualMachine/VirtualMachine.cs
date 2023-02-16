@@ -7,23 +7,23 @@ public static class VirtualMachine
     private static Stopwatch? _stopwatch;
     private static volatile int _countOfTasks;
 
-    public static void Run(VmImage vmImage, AssemblyManager? assemblyManager = null)
+    public static void Run(VmImage vmImage)
     {
         VmRuntime.VmRuntime runtime = new() { OnProgramExit = OnTaskExit };
         runtime.SetImage(vmImage);
 
         if (_countOfTasks == 0) OnProgramStart();
         Interlocked.Increment(ref _countOfTasks);
-        Task.Run(() =>
-        {
-            runtime.Run();
-            Interlocked.Decrement(ref _countOfTasks);
-        });
+        // Task.Run(() =>
+        // {
+        runtime.Run();
+        Interlocked.Decrement(ref _countOfTasks);
+        // });
     }
 
-    public static void RunAndWait(VmImage vmImage, AssemblyManager? assemblyManager = null)
+    public static void RunAndWait(VmImage vmImage)
     {
-        Run(vmImage, assemblyManager);
+        Run(vmImage);
         WaitLast();
     }
 

@@ -14,7 +14,15 @@ public record VmVariable(string Name, bool IsConst = false)
     public object? Value
     {
         get => _memory.ReadFromMemory(OffsetPtr);
-        private set => _memory.WriteToMemory(OffsetPtr, value);
+        private set
+        {
+            Console.Write("###");
+            Console.Write(value.GetType());
+            _memory.WriteToMemory(OffsetPtr, value);
+            Console.Write("###!");
+            Console.Write(Value.GetType());
+            Console.Write("###!");
+        }
     }
 
     public void ChangeValue(object? value)

@@ -1,6 +1,7 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
 using System.Data;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -8,9 +9,6 @@ using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
-    private static int _varId;
-    private readonly Predicate<VmVariable> _predicate = x => x.Id == _varId;
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void Not()
     {
@@ -113,6 +111,19 @@ public partial class VmRuntime
     private void Add()
     {
         ReadTwoValues(out object? a, out object? b);
+        Debug.Assert(a is not null);
+        Debug.Assert(b is not null);
+        Console.WriteLine(a.GetType() + "^^^^^^^^");
+        try
+        {
+            Console.WriteLine("@@" + (b.GetType() == b.GetType()) + "@@");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+
+        Console.WriteLine(b.GetType() + "%%%%%%%%");
 
         if (a is string str0)
         {
@@ -167,11 +178,11 @@ public partial class VmRuntime
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SetVariable()
     {
-        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out _varId))
+        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out int varId))
             throw new InvalidOperationException($"variable with id {Memory.Ip} not found");
 
         List<VmVariable> allVariables = Memory.GetAllVariables();
-        VmVariable vmVariable = allVariables.FindLast(_predicate) ?? throw new InvalidOperationException();
+        VmVariable vmVariable = allVariables.FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
         vmVariable.ChangeValue(Memory.Pop());
     }
 
@@ -180,10 +191,19 @@ public partial class VmRuntime
     private void LoadVariable()
     {
         int ip = Memory.Ip;
-        if (!_pointersToInsertVariables.TryGetValue(ip, out _varId))
+        if (!_pointersToInsertVariables.TryGetValue(ip, out int varId))
             throw new InvalidOperationException($"variable with id {ip} not found");
 
-        VmVariable value = Memory.GetAllVariables().FindLast(_predicate) ?? throw new InvalidOperationException();
+        VmVariable value = Memory.GetAllVariables().FindLast(x => x.Id == varId) ??
+                           throw new InvalidOperationException();
+        Console.Write("QQQ");
+        Console.Write(value.GetType() + "\n");
+        Console.Write("QQQ!");
+        Console.Write(value.Value);
+        Console.Write("QQQ!");
+        Type type = value.Value.GetType();
+        Console.Write(type);
+        Console.WriteLine("QQQ");
         Memory.Push(value.Value);
     }
 
@@ -232,8 +252,11 @@ public partial class VmRuntime
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void LessThan()
     {
+        Console.Write("!");
         ReadTwoNumbers(out decimal a, out decimal b);
+        Console.Write("!!");
         Memory.Push(a < b);
+        Console.Write("!!!");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

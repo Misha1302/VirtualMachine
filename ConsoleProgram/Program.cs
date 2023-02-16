@@ -3,11 +3,13 @@ using Tokenizer.Parser;
 using Tokenizer.Token;
 using VirtualMachine;
 
+
 // save variables in memory and get ptr to it
 const string code = """
-loop var i = 0, i 1_000_000 <, i = i 1 +
-    # PrintLn(i)
-    # PrintLn(ptr i)
+var q = 100_000
+loop var i = 0, i q <, i = i 1 +
+    PrintLn('value of i: ' i + '    ptr of i: ' + ptr i +)
+    PrintLn('value of q: ' q + '    ptr of q: ' + ptr q +)
 end
 """;
 
@@ -16,7 +18,7 @@ List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out Assemb
 VmCompiler.VmCompiler compiler = new(assemblyManager);
 VmImage vmImage = compiler.Compile(tokens);
 
-VirtualMachine.VirtualMachine.RunAndWait(vmImage, assemblyManager);
+VirtualMachine.VirtualMachine.RunAndWait(vmImage);
 #if !DEBUG
 Console.Read();
 #endif

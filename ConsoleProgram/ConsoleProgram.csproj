@@ -5,12 +5,14 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Platforms>AnyCPU;x64</Platforms>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj"/>
-        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj"/>
-        <ProjectReference Include="..\VmCompiler\VmCompiler.csproj"/>
+        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj" />
+        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj" />
+        <ProjectReference Include="..\VmCompiler\VmCompiler.csproj" />
     </ItemGroup>
 
 </Project>

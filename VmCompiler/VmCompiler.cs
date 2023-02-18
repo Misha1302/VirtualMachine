@@ -2,6 +2,7 @@
 
 using Tokenizer.Token;
 using VirtualMachine;
+using VirtualMachine.Variables;
 
 public class VmCompiler
 {
@@ -76,11 +77,20 @@ public class VmCompiler
             bool contains = endTokenType.HasFlag(_tokens[i].TokenType);
             if (contains) break;
 
+            TokenType nextToken = _tokens[i + 1].TokenType;
+
+            TokenType previousToken = i != 0 ? _tokens[i - 1].TokenType : default;
+
             switch (_tokens[i].TokenType)
             {
                 case TokenType.Variable
-                    when _tokens[i + 1].TokenType is not TokenType.EqualsSign and not TokenType.PtrEqualsSign:
+                    when nextToken is not TokenType.EqualsSign and not TokenType.PtrEqualsSign and not TokenType.ElemOf
+                         && previousToken is not TokenType.ElemOf:
                     _image.LoadVariable(_tokens[i].Text);
+                    break;
+                case TokenType.OpenBracket:
+                    CompileList(ref i);
+                    i--;
                     break;
                 case TokenType.LessThan:
                     _image.WriteNextOperation(InstructionName.LessThan);
@@ -90,6 +100,9 @@ public class VmCompiler
                     break;
                 case TokenType.Modulo:
                     _image.WriteNextOperation(InstructionName.Modulo);
+                    break;
+                case TokenType.SetElem:
+                    CompileSetElem(ref i);
                     break;
                 case TokenType.IsEquals:
                     _image.WriteNextOperation(InstructionName.Equals);
@@ -133,6 +146,9 @@ public class VmCompiler
                 case TokenType.PushByPtr:
                     PushByPtr(ref i);
                     break;
+                case TokenType.ElemOf:
+                    CompileElemOf(ref i);
+                    break;
                 case TokenType.PtrEqualsSign:
                     CompilePtrSet(ref i);
                     i--;
@@ -150,6 +166,33 @@ public class VmCompiler
         }
     }
 
+    private void CompileSetElem(ref int i)
+    {
+        i++;
+        CompileNextBlock(ref i, TokenType.NewLine);
+        _image.WriteNextOperation(InstructionName.SetElem);
+    }
+
+    private void CompileList(ref int i)
+    {
+        _image.WriteNextOperation(InstructionName.PushConstant, new VmList());
+        PassTokensBeforeNext(ref i, TokenType.NewLine);
+        i--;
+    }
+
+    private void CompileElemOf(ref int i)
+    {
+        Token a = _tokens[i - 1];
+        Token b = _tokens[i + 1];
+
+        if (a.TokenType == TokenType.Number) _image.WriteNextOperation(InstructionName.PushConstant, a.Value);
+        else _image.LoadVariable(a.Text);
+
+        _image.LoadVariable(b.Text);
+        _image.WriteNextOperation(InstructionName.ElemOf);
+        i++;
+    }
+
     private void CompilePtrSet(ref int i)
     {
         int index = i - 1;
@@ -163,7 +206,8 @@ public class VmCompiler
     {
         i++;
         int index = i;
-        int id = _image.Variables.FindLast(x => x.Name == _tokens[index].Text).Id;
+        int id = (_image.Variables.FindLast(x => x.Name == _tokens[index].Text) ??
+                  throw new InvalidOperationException($"Variable {_tokens[index].Text} was not found")).Id;
         _image.WriteNextOperation(InstructionName.PushConstant, id);
         _image.WriteNextOperation(InstructionName.GetPtr);
     }

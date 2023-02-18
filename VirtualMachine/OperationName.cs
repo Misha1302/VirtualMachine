@@ -28,11 +28,12 @@ public enum InstructionName : byte
     CopyVariable,
     DeleteVariable,
     NoOperation,
-    GetByIndex,
+    ElemOf,
     GreatThan,
     Drop,
     Modulo,
     GetPtr,
     SetToPtr,
-    PushByPtr
+    PushByPtr,
+    SetElem
 }

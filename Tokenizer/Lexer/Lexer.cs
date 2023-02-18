@@ -42,6 +42,8 @@ public static class Lexer
         { "=", TokenType.EqualsSign },
         { "->", TokenType.PtrEqualsSign },
         { "ref", TokenType.PushByPtr },
+        { "elemOf", TokenType.ElemOf },
+        { "setElem", TokenType.SetElem },
 
         { ",", TokenType.Comma },
         { ".", TokenType.Dot }

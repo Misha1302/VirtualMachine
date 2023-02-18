@@ -23,9 +23,9 @@ public class AssemblyManager
     {
         Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(dllPath));
         Type? @class = assembly.GetType("Library.Library");
-        if (@class is null) throw new Exception("Class 'Library' in namespace 'Library' not found");
+        if (@class is null) throw new Exception("Class 'Library' in namespace 'Library' was not found");
 
-        MethodInfo method = @class.GetMethod(methodName) ?? throw new Exception($"Method '{methodName}' not found");
+        MethodInfo method = @class.GetMethod(methodName) ?? throw new Exception($"Method '{methodName}' was not found");
         lock (_methods)
         {
             int methodsCount = _methods.Count;

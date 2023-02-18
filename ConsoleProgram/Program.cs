@@ -5,21 +5,13 @@ using VirtualMachine;
 
 // add reverse polish notation
 const string code = """
-var iPtr
-var somePtr
+var array = []
 
-loop var i = 0, i 100_000 <, i = i 1 +
-    PrintLn(i) # print i
-    iPtr = ptr i # get a pointer to variable i
-    iPtr -> i 2 + # set iPtr by it's pointer
-    PrintLn(i) # print i (increased by two)
+setElem 0 in array to 123
+setElem 3480 in array to 123
 
-    somePtr = 2 # i pointer
-    somePtr -> ref iPtr 3 + # get value from pointer iPtr, add 2, set it by somePtr pointer
-    PrintLn(i) # print i (increased by three)
-    
-    PrintLn('') # new line
-end
+PrintLn(0 elemOf array)
+PrintLn(4 elemOf array)
 """;
 
 Parser parser = new();

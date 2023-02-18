@@ -47,7 +47,7 @@ public partial class VmRuntime
                 Memory.Push(m / (decimal)(b ?? throw new InvalidOperationException()));
                 break;
             case string s:
-                List<object?> strings = s.Split((string)(b ?? string.Empty)).Select(x => (object?)x).ToList();
+                VmList strings = new(s.Split((string)(b ?? string.Empty)).Select(x => (object?)x).ToList());
                 Memory.Push(strings);
                 break;
             default:
@@ -108,9 +108,9 @@ public partial class VmRuntime
 
         if (a is string str0)
         {
-            if (b is List<object?> list)
+            if (b is VmList list)
             {
-                list.Add(str0);
+                list.AddToEnd(str0);
                 Memory.Push(list);
             }
             else
@@ -120,9 +120,9 @@ public partial class VmRuntime
         }
         else if (b is string str1)
         {
-            if (a is List<object?> list)
+            if (a is VmList list)
             {
-                list.Add(str1);
+                list.AddToEnd(str1);
                 Memory.Push(list);
             }
             else
@@ -137,8 +137,8 @@ public partial class VmRuntime
                 case decimal m:
                     Memory.Push(m + (decimal)(b ?? throw new InvalidOperationException()));
                     break;
-                case List<object?> collection:
-                    collection.Add(b);
+                case VmList collection:
+                    collection.AddToEnd(b);
                     Memory.Push(collection);
                     break;
                 default:
@@ -157,7 +157,7 @@ public partial class VmRuntime
     private void SetVariable()
     {
         if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out _varId))
-            throw new InvalidOperationException($"variable with id {Memory.Ip} not found");
+            throw new InvalidOperationException($"variable with id {Memory.Ip} was not found");
 
         List<VmVariable> allVariables = Memory.GetAllVariables();
         VmVariable vmVariable = allVariables.FindLast(_predicate) ?? throw new InvalidOperationException();
@@ -168,7 +168,7 @@ public partial class VmRuntime
     private void LoadVariable()
     {
         if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out _varId))
-            throw new InvalidOperationException($"variable with id {Memory.Ip} not found");
+            throw new InvalidOperationException($"variable with id {Memory.Ip} was not found");
 
         VmVariable value = Memory.GetAllVariables().FindLast(_predicate) ?? throw new InvalidOperationException();
         Memory.Push(value.Value);
@@ -314,10 +314,10 @@ public partial class VmRuntime
     }
 
 
-    private void GetByIndex()
+    private void ElemOf()
     {
-        ReadTwoValues(out object? list, out object? index);
-        List<object?> obj0 = (List<object?>)(list ?? throw new InvalidOperationException());
+        ReadTwoValues(out object? index, out object? list);
+        VmList obj0 = (VmList)(list ?? throw new InvalidOperationException());
         object? value = obj0[(int)(decimal)(index ?? throw new InvalidOperationException())];
         Memory.Push(value);
     }
@@ -349,5 +349,14 @@ public partial class VmRuntime
         int id = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
         int index = (allVariables.FindLast(x => x.Id == id) ?? throw new InvalidOperationException()).Index;
         Memory.Push(allVariables[index].Value);
+    }
+
+    private void SetElem()
+    {
+        object? obj = Memory.Pop();
+        VmList array = (VmList)(Memory.Pop() ?? throw new InvalidOperationException());
+        int index = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        
+        array.SetElement(index, obj);
     }
 }

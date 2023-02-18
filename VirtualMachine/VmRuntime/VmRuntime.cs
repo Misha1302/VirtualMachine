@@ -5,6 +5,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
@@ -96,7 +97,8 @@ public partial class VmRuntime
                 InstructionName.PushConstant => PushConstant,
                 InstructionName.DeleteVariable => DeleteVariable,
                 InstructionName.NoOperation => NoOperation,
-                InstructionName.GetByIndex => GetByIndex,
+                InstructionName.ElemOf => ElemOf,
+                InstructionName.SetElem => SetElem,
                 InstructionName.GetPtr => GetPtr,
                 InstructionName.SetToPtr => SetToPtr,
                 InstructionName.PushByPtr => PushByPtr,
@@ -184,8 +186,8 @@ public partial class VmRuntime
                 return i.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
             case string s:
                 return s;
-            case List<object> list when list.All(x => x is char):
-                return new string(list.Select(x => (char)x).ToArray());
+            case VmList list when list.All(x => x is char):
+                return new string(list.Select(x => (char)x!).ToArray());
             case IEnumerable collection:
             {
                 StringBuilder stringBuilder = new();

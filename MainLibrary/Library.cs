@@ -3,12 +3,13 @@
 namespace Library;
 
 using System.Runtime.CompilerServices;
+using VirtualMachine.Variables;
 using VirtualMachine.VmRuntime;
 
 public static class Library
 {
-    // add memory and pointers
-    // add dynamically create a new instance of external class
+    // AddToEnd memory and pointers
+    // AddToEnd dynamically create a new instance of external class
     public static void PrintLn(VmRuntime vmRuntime)
     {
         object? obj = vmRuntime.Memory.Pop();
@@ -57,32 +58,23 @@ public static class Library
     public static void Reverse(VmRuntime vmRuntime)
     {
         object? obj = vmRuntime.Memory.Pop();
-        if (obj is List<object?> list)
+        if (obj is VmList list)
         {
-            List<object?> newList = new(list.Count);
-            if (list.Count == 0)
+            VmList newList = new();
+            if (list.Len == 0)
             {
                 vmRuntime.Memory.Push(newList);
                 return;
             }
 
             if (list[0] is ICloneable)
-                list.ForEach(item =>
-                {
-                    if (item is null)
-                    {
-                        newList.Add(null);
-                    }
-                    else
-                    {
-                        object clone = ((ICloneable)item).Clone();
-                        newList.Add(clone);
-                    }
-                });
+                foreach (object? item in list)
+                    newList.AddToEnd(item is not null ? ((ICloneable)item).Clone() : null);
             else
-                list.ForEach(item => newList.Add(item));
+                foreach (object? item in list)
+                    newList.AddToEnd(item);
 
-            newList.Reverse();
+            newList = new VmList(newList.Reverse().ToList());
             vmRuntime.Memory.Push(newList);
         }
         else

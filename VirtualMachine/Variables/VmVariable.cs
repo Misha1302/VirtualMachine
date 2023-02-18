@@ -7,15 +7,9 @@ public record VmVariable(string Name, bool IsConst = false)
 {
     public readonly int Id = IdManager.GetNewId();
     public readonly bool IsConst = IsConst;
-    private VmMemory _memory;
+    public int Index;
     public string Name = Name;
-    public ulong OffsetPtr { get; private set; }
-
-    public object? Value
-    {
-        get => _memory.ReadFromMemory(OffsetPtr);
-        private set => _memory.WriteToMemory(OffsetPtr, value);
-    }
+    public object? Value;
 
     public void ChangeValue(object? value)
     {
@@ -23,9 +17,8 @@ public record VmVariable(string Name, bool IsConst = false)
         Value = value;
     }
 
-    public void SetOffsetPtr(ulong offsetPtr, VmMemory memory)
+    public void SetIndex(int index)
     {
-        _memory = memory;
-        OffsetPtr = offsetPtr;
+        Index = index;
     }
 }

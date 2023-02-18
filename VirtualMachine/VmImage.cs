@@ -10,8 +10,8 @@ public class VmImage
     private readonly Dictionary<string, int> _labels;
     private readonly VmMemory _memory;
     private readonly Dictionary<int, int> _pointersToInsertVariables;
-    public readonly List<VmVariable> Variables;
     public readonly AssemblyManager AssemblyManager;
+    public readonly List<VmVariable> Variables;
 
     private int _ip;
 
@@ -28,7 +28,7 @@ public class VmImage
 
         _memory = new VmMemory
         {
-            MemoryArray = new InstructionName[BaseProgramSize],
+            InstructionsArray = new InstructionName[BaseProgramSize],
             Ip = 0
         };
 
@@ -39,7 +39,7 @@ public class VmImage
 
     public void WriteNextOperation(InstructionName operation)
     {
-        _memory.MemoryArray[_ip] = operation;
+        _memory.InstructionsArray[_ip] = operation;
         _ip++;
 
         IncreaseMemArrayIfItNeed();
@@ -47,7 +47,7 @@ public class VmImage
 
     public void WriteNextOperation(InstructionName operation, object? arg)
     {
-        _memory.MemoryArray[_ip] = operation;
+        _memory.InstructionsArray[_ip] = operation;
         _ip++;
 
         IncreaseMemArrayIfItNeed();
@@ -66,9 +66,9 @@ public class VmImage
 
     private void IncreaseMemArrayIfItNeed()
     {
-        int len = _memory.MemoryArray.Length;
+        int len = _memory.InstructionsArray.Length;
         if (_ip < len) return;
-        Array.Resize(ref _memory.MemoryArray, len << 1);
+        Array.Resize(ref _memory.InstructionsArray, len << 1);
     }
 
 
@@ -81,7 +81,7 @@ public class VmImage
     public VmMemory GetMemory()
     {
         Dictionary<int, object?> constants = _memory.Constants.ToDictionary(entry => entry.Key, entry => entry.Value);
-        InstructionName[] memArray = (InstructionName[])_memory.MemoryArray.Clone();
+        InstructionName[] memArray = (InstructionName[])_memory.InstructionsArray.Clone();
 
         WriteNextOperation(InstructionName.End);
         _ip--;
@@ -91,11 +91,11 @@ public class VmImage
         {
             Constants = _memory.Constants,
             Ip = 0,
-            MemoryArray = _memory.MemoryArray
+            InstructionsArray = _memory.InstructionsArray
         };
 
         _memory.Constants = constants;
-        _memory.MemoryArray = memArray;
+        _memory.InstructionsArray = memArray;
 
         return memToReturn;
     }
@@ -105,7 +105,7 @@ public class VmImage
         foreach ((string key, int position) in _goto)
         {
             int value = _labels[key];
-            WriteNextConstant(value, position);
+            WriteNextConstant((decimal)value, position);
         }
     }
 

@@ -40,6 +40,8 @@ public static class Lexer
         { "==", TokenType.IsEquals },
 
         { "=", TokenType.EqualsSign },
+        { "->", TokenType.PtrEqualsSign },
+        { "ref", TokenType.PushByPtr },
 
         { ",", TokenType.Comma },
         { ".", TokenType.Dot }
@@ -117,7 +119,7 @@ public static class Lexer
 
         string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length;
-        
+
         return new Token(TokenType.Comment, str, str);
     }
 

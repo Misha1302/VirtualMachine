@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
@@ -16,6 +15,7 @@ public partial class VmRuntime
     public VmMemory Memory;
 
     public Action<VmRuntime, Exception?>? OnProgramExit;
+    public Action<VmRuntime>? OnProgramStart;
 
     public VmRuntime()
     {
@@ -45,9 +45,9 @@ public partial class VmRuntime
         try
 #endif
         {
+            OnProgramStart?.Invoke(this);
             int instructionsCount = instructions.Count;
-            for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++)
-                instructions[Memory.Ip]();
+            for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++) instructions[Memory.Ip]();
         }
 #if !DEBUG
         catch (Exception ex)
@@ -63,7 +63,7 @@ public partial class VmRuntime
     private List<Instruction> GenerateDictToExecute()
     {
         int ip = 0;
-        InstructionName operation = Memory.MemoryArray[ip];
+        InstructionName operation = Memory.InstructionsArray[ip];
 
         List<Instruction> instructions = new();
 
@@ -98,13 +98,15 @@ public partial class VmRuntime
                 InstructionName.NoOperation => NoOperation,
                 InstructionName.GetByIndex => GetByIndex,
                 InstructionName.GetPtr => GetPtr,
+                InstructionName.SetToPtr => SetToPtr,
+                InstructionName.PushByPtr => PushByPtr,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);
 
             ip++;
 
-            operation = Memory.MemoryArray[ip];
+            operation = Memory.InstructionsArray[ip];
         }
 
         return instructions;
@@ -120,7 +122,7 @@ public partial class VmRuntime
         _instructions = GenerateDictToExecute();
     }
 
-    public void PrintState()
+    public string GetStateAsString()
     {
         StringBuilder outputStringBuilder = new();
 
@@ -150,7 +152,7 @@ public partial class VmRuntime
         })));
         outputStringBuilder.AppendLine("}");
 
-        Console.WriteLine(outputStringBuilder);
+        return outputStringBuilder.ToString();
     }
 
     private void ReadTwoValues(out object? obj0, out object? obj1)

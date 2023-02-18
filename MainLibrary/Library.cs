@@ -109,7 +109,7 @@ public static class Library
 
     public static void PrintState(VmRuntime vmRuntime)
     {
-        vmRuntime.PrintState();
+        Console.WriteLine(vmRuntime.GetStateAsString());
     }
 
     public static void RandomInteger(VmRuntime vmRuntime)

@@ -7,30 +7,24 @@ public static class VirtualMachine
     private static Stopwatch? _stopwatch;
     private static volatile int _countOfTasks;
 
-    public static void Run(VmImage vmImage, AssemblyManager? assemblyManager = null)
+    public static void Run(VmImage vmImage)
     {
-        VmRuntime.VmRuntime runtime = new() { OnProgramExit = OnTaskExit };
-        runtime.SetImage(vmImage);
-
-        if (_countOfTasks == 0) OnProgramStart();
         Interlocked.Increment(ref _countOfTasks);
-        Task.Run(() =>
-        {
-            runtime.Run();
-            Interlocked.Decrement(ref _countOfTasks);
-        });
+        VmRuntime.VmRuntime runtime = CreateNewRuntime(vmImage);
+        if (_countOfTasks == 1) _stopwatch = Stopwatch.StartNew();
+        Task.Run(runtime.Run);
     }
 
-    public static void RunAndWait(VmImage vmImage, AssemblyManager? assemblyManager = null)
+    public static void RunAndWait(VmImage vmImage)
     {
-        Run(vmImage, assemblyManager);
+        Run(vmImage);
         WaitLast();
     }
 
     public static VmMemory RunDebug(VmImage image)
     {
-        VmRuntime.VmRuntime runtime = new() { OnProgramExit = OnTaskExit };
-        runtime.SetImage(image);
+        Interlocked.Increment(ref _countOfTasks);
+        VmRuntime.VmRuntime runtime = CreateNewRuntime(image);
         runtime.Run();
 
         return runtime.Memory;
@@ -41,39 +35,39 @@ public static class VirtualMachine
         while (_countOfTasks != 0)
             Thread.Sleep(0);
 
-        OnProgramExit(null, null);
+        OnProgramExit();
     }
 
-    private static void OnProgramStart()
+    private static void OnProgramExit()
     {
-        _stopwatch = Stopwatch.StartNew();
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("Program executed without exception");
+        Console.ResetColor();
+        
+        _stopwatch!.Stop();
+        Console.WriteLine($"{_stopwatch.ElapsedMilliseconds} ms");
     }
 
     private static void OnTaskExit(VmRuntime.VmRuntime vmRuntime, Exception? error)
     {
-        if (error is not null) OnProgramExit(vmRuntime, error);
+        Interlocked.Decrement(ref _countOfTasks);
+        if (error is not null) GenerateException(vmRuntime, error);
     }
 
-    private static void OnProgramExit(VmRuntime.VmRuntime? vmRuntime, Exception? error)
+    private static void GenerateException(VmRuntime.VmRuntime vmRuntime, Exception error)
     {
-        _stopwatch?.Stop();
-        Console.WriteLine($"Program completed in {_stopwatch?.ElapsedMilliseconds} ms");
-
-        if (error is null)
-        {
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Program executed without errors");
-        }
-        else
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"Program executed with error [{error}]");
-        }
-
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine(error.Message);
         Console.ResetColor();
+        
+        Console.WriteLine(vmRuntime.GetStateAsString());
+        Console.WriteLine(error.StackTrace);
+    }
 
-        vmRuntime?.PrintState();
-
-        if (_stopwatch is null) throw new NullReferenceException(nameof(_stopwatch));
+    private static VmRuntime.VmRuntime CreateNewRuntime(VmImage vmImage)
+    {
+        VmRuntime.VmRuntime runtime = new() { OnProgramExit = OnTaskExit };
+        runtime.SetImage(vmImage);
+        return runtime;
     }
 }

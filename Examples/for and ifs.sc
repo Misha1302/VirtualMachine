@@ -9,4 +9,4 @@ loop var i = 0, i 1_000_000 <, i = i 1 +
     else
         PrintLn('what is it? - ' i +)
     end
-end	7y1t6`
+end

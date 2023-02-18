@@ -7,7 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj" />
+        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj"/>
     </ItemGroup>
 
 </Project>

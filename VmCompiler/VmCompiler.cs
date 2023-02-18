@@ -78,7 +78,8 @@ public class VmCompiler
 
             switch (_tokens[i].TokenType)
             {
-                case TokenType.Variable when _tokens[i + 1].TokenType != TokenType.EqualsSign:
+                case TokenType.Variable
+                    when _tokens[i + 1].TokenType is not TokenType.EqualsSign and not TokenType.PtrEqualsSign:
                     _image.LoadVariable(_tokens[i].Text);
                     break;
                 case TokenType.LessThan:
@@ -129,6 +130,13 @@ public class VmCompiler
                 case TokenType.Ptr:
                     CompilePtr(ref i);
                     break;
+                case TokenType.PushByPtr:
+                    PushByPtr(ref i);
+                    break;
+                case TokenType.PtrEqualsSign:
+                    CompilePtrSet(ref i);
+                    i--;
+                    break;
                 case TokenType.ForeignMethod:
                     CompileMethod(ref i);
                     i--;
@@ -142,6 +150,15 @@ public class VmCompiler
         }
     }
 
+    private void CompilePtrSet(ref int i)
+    {
+        int index = i - 1;
+        i++; // '->'
+        CompileNextBlock(ref i, TokenType.NewLine);
+        _image.LoadVariable(_tokens[index].Text);
+        _image.WriteNextOperation(InstructionName.SetToPtr);
+    }
+
     private void CompilePtr(ref int i)
     {
         i++;
@@ -149,6 +166,14 @@ public class VmCompiler
         int id = _image.Variables.FindLast(x => x.Name == _tokens[index].Text).Id;
         _image.WriteNextOperation(InstructionName.PushConstant, id);
         _image.WriteNextOperation(InstructionName.GetPtr);
+    }
+
+    private void PushByPtr(ref int i)
+    {
+        i++;
+        int index = i;
+        _image.LoadVariable(_tokens[index].Text);
+        _image.WriteNextOperation(InstructionName.PushByPtr);
     }
 
     private void CompileElse(ref int i)

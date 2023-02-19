@@ -150,6 +150,23 @@ public static class Lexer
 
         string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length + 1;
+        str = NormalizeString(str);
         return new Token(TokenType.String, str, str);
+    }
+
+    private static string NormalizeString(string str)
+    {
+        IReadOnlyDictionary<string, string> dict = new Dictionary<string, string>
+        {
+            { "(?<!(\\\\))\\\\t", "\t" },
+            { "(?<!(\\\\))\\\\v", "\v" },
+            { "(?<!(\\\\))\\\\r", "\r" },
+            { "(?<!(\\\\))\\\\n", "\n" },
+            { "(?<!(\\\\))\\\\b", "\b" },
+            { "(?<!(\\\\))\\\\0", "\0" },
+            { "\\\\\\\\", "\\" }
+        };
+
+        return dict.Aggregate(str, (current, pair) => Regex.Replace(current, pair.Key, pair.Value));
     }
 }

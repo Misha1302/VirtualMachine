@@ -4,10 +4,19 @@ using Tokenizer.Token;
 using VirtualMachine;
 
 const string code = """
-PrintLn(3 + 5 * (((3 - 4) / 3)) / 2.21 * 1 * 2 * 5 / 33) # approximately 2.771470359705654
-loop var i = 0, i < 5, i = i + 1
-    PrintLn('Multiplication equals ' + (StringToNumber(Input()) * StringToNumber(Input())))
-end
+PrintLn('
+0\n1\n2
+3\t4\t5
+6 7 8
+9 
+10
+11\v
+\0
+12\v
+13\r9
+123\b\b8
+\\n 5
+')
 """;
 
 Parser parser = new();

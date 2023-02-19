@@ -77,8 +77,7 @@ public class VmCompiler
             bool contains = endTokenType.HasFlag(_tokens[i].TokenType);
             if (contains) break;
 
-            TokenType nextToken = _tokens[i + 1].TokenType;
-
+            TokenType nextToken = i + 1 != _tokens.Count ? _tokens[i + 1].TokenType : default;
             TokenType previousToken = i != 0 ? _tokens[i - 1].TokenType : default;
 
             switch (_tokens[i].TokenType)

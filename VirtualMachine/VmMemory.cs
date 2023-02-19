@@ -7,10 +7,8 @@ public record VmMemory
     private const int StackSize = 0xFFFF;
     private const int RecursionSize = 0xFFFF;
 
-    private const int MemorySize = 0xFFFF;
     private readonly object?[] _stack = new object?[StackSize];
     private readonly List<VmVariable> _variables = new(64);
-    public readonly byte[] ArrayOfMemory = GC.AllocateArray<byte>(sizeof(byte) * MemorySize, true);
     public readonly Stack<int> RecursionStack = new(RecursionSize);
 
     private int _sp; // stack pointer

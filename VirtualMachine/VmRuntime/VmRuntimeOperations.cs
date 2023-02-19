@@ -16,11 +16,11 @@ public partial class VmRuntime
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
         switch (obj)
         {
-            case decimal d when !d.IsEquals(0):
-                Memory.Push(d == 0);
+            case decimal d:
+                Memory.Push(d == 0 ? 1m : 0m);
                 break;
             case bool b:
-                Memory.Push(!b);
+                Memory.Push(!b ? 1m : 0m);
                 break;
             default:
                 throw new StrongTypingException();
@@ -33,7 +33,7 @@ public partial class VmRuntime
         object? a = Memory.Pop();
         object? b = Memory.Pop();
 
-        Memory.Push(a?.Equals(b));
+        Memory.Push((a ?? throw new InvalidOperationException()).Equals(b) ? 1m : 0m);
     }
 
 
@@ -108,15 +108,7 @@ public partial class VmRuntime
 
         if (a is string str0)
         {
-            if (b is VmList list)
-            {
-                list.AddToEnd(str0);
-                Memory.Push(list);
-            }
-            else
-            {
-                Memory.Push(str0 + ObjectToString(b));
-            }
+            Memory.Push(str0 + ObjectToString(b));
         }
         else if (b is string str1)
         {
@@ -220,14 +212,14 @@ public partial class VmRuntime
     private void LessThan()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Push(a < b);
+        Memory.Push(a < b ? 1m : 0m);
     }
 
 
     private void GreatThan()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Push(a > b);
+        Memory.Push(a > b ? 1m : 0m);
     }
 
 
@@ -274,8 +266,7 @@ public partial class VmRuntime
 
     private void PushConstant()
     {
-        object? var = Memory.Constants[Memory.Ip];
-        Memory.Push(var);
+        Memory.Push(Memory.Constants[Memory.Ip]);
     }
 
 
@@ -356,7 +347,18 @@ public partial class VmRuntime
         object? obj = Memory.Pop();
         VmList array = (VmList)(Memory.Pop() ?? throw new InvalidOperationException());
         int index = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        
+
         array.SetElement(index, obj);
+    }
+
+    private void Or()
+    {
+        ReadTwoNumbers(out decimal a, out decimal b);
+        Memory.Push(a == 1 || b == 1 ? 1m : 0m);
+    }
+    private void And()
+    {
+        ReadTwoNumbers(out decimal a, out decimal b);
+        Memory.Push(a == 1 && b == 1 ? 1m : 0m);
     }
 }

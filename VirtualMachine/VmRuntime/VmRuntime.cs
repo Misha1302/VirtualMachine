@@ -42,6 +42,10 @@ public partial class VmRuntime
 
     private void Execute(IReadOnlyList<Instruction> instructions)
     {
+#if DEBUG
+        IEnumerable<string> unused = instructions.Select(x => x.Method.Name);
+#endif
+
 #if !DEBUG
         try
 #endif
@@ -91,6 +95,8 @@ public partial class VmRuntime
                 InstructionName.Ret => Ret,
                 InstructionName.Drop => Drop,
                 InstructionName.PushAddress => PushAddress,
+                InstructionName.Or => Or,
+                InstructionName.And => And,
                 InstructionName.Jump => Jump,
                 InstructionName.CreateVariable => CreateVariable,
                 InstructionName.CopyVariable => CopyVariable,

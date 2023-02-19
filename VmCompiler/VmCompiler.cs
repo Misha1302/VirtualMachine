@@ -73,6 +73,7 @@ public class VmCompiler
 
     private void CompileNextBlock(ref int i, TokenType endTokenType)
     {
+        List<Token> debug = new();
         while (true)
         {
             bool contains = endTokenType.HasFlag(_tokens[i].TokenType);
@@ -81,11 +82,10 @@ public class VmCompiler
             TokenType nextToken = i + 1 != _tokens.Count ? _tokens[i + 1].TokenType : default;
             TokenType previousToken = i != 0 ? _tokens[i - 1].TokenType : default;
 
+            debug.Add(_tokens[i]);
             switch (_tokens[i].TokenType)
             {
-                case TokenType.Variable
-                    when nextToken is not TokenType.EqualsSign and not TokenType.PtrEqualsSign and not TokenType.ElemOf
-                         && previousToken is not TokenType.ElemOf:
+                case TokenType.Variable when CanLoadVariable(nextToken, previousToken):
                     _image.LoadVariable(_tokens[i].Text);
                     break;
                 case TokenType.OpenBracket:
@@ -110,6 +110,13 @@ public class VmCompiler
                 case TokenType.EqualsSign:
                     CompileEqualsSign(ref i);
                     i--;
+                    break;
+                case TokenType.IsNot:
+                    _image.WriteNextOperation(InstructionName.Not);
+                    break;
+                case TokenType.IsNotEquals:
+                    _image.WriteNextOperation(InstructionName.Equals);
+                    _image.WriteNextOperation(InstructionName.Not);
                     break;
                 case TokenType.If:
                     CompileIf(ref i);
@@ -137,6 +144,12 @@ public class VmCompiler
                 case TokenType.Multiply:
                     _image.WriteNextOperation(InstructionName.Multiply);
                     break;
+                case TokenType.Or:
+                    _image.WriteNextOperation(InstructionName.Or);
+                    break;
+                case TokenType.And:
+                    _image.WriteNextOperation(InstructionName.And);
+                    break;
                 case TokenType.Divide:
                     _image.WriteNextOperation(InstructionName.Divide);
                     break;
@@ -160,10 +173,35 @@ public class VmCompiler
                 case TokenType.Loop:
                     CompileLoop(ref i);
                     break;
+                case TokenType.NewLine:
+                case TokenType.Var:
+                case TokenType.In:
+                case TokenType.To:
+                case TokenType.Comma:
+                    break;
+                default:
+                    Token token = _tokens[i];
+                    if (token.TokenType == TokenType.Variable)
+                    {
+                        if (CanLoadVariable(nextToken, previousToken))
+                            throw new Exception($"Unexpected token {token}");
+                    }
+                    else
+                    {
+                        throw new Exception($"Unexpected token {token}");
+                    }
+
+                    break;
             }
 
             i++;
         }
+    }
+
+    private static bool CanLoadVariable(TokenType nextToken, TokenType previousToken)
+    {
+        return nextToken is not TokenType.EqualsSign and not TokenType.PtrEqualsSign and not TokenType.ElemOf
+               && previousToken is not TokenType.ElemOf;
     }
 
     private void CompileSetElem(ref int i)

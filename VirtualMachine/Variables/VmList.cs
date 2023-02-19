@@ -22,9 +22,11 @@ public class VmList : IEnumerable<object?>
 
     public int Len => _maxIndex + 1;
 
+    public object? this[int index] => GetElement(index);
+
     public IEnumerator<object?> GetEnumerator()
     {
-        return (IEnumerator<object?>)_array.GetEnumerator();
+        return _array[..Len].Cast<object?>().GetEnumerator();
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -67,10 +69,5 @@ public class VmList : IEnumerable<object?>
 
         if (maxIndex / 2 >= arrayLength) Array.Resize(ref _array, maxIndex + 1);
         else Array.Resize(ref _array, arrayLength * 2);
-    }
-
-    public object? this[int index]
-    {
-        get => GetElement(index);
     }
 }

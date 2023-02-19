@@ -14,21 +14,13 @@ public static class Lexer
 
     private static string _code = string.Empty;
 
-    private static readonly IReadOnlyDictionary<string, TokenType> _words = new Dictionary<string, TokenType>
+    private static readonly IReadOnlyDictionary<string, TokenType> _symbols = new Dictionary<string, TokenType>
     {
         { "(", TokenType.OpenParentheses },
         { ")", TokenType.CloseParentheses },
 
         { "[", TokenType.OpenBracket },
         { "]", TokenType.CloseBracket },
-
-        { "end", TokenType.End },
-        { "import", TokenType.Import },
-        { "var", TokenType.Var },
-        { "loop", TokenType.Loop },
-        { "if", TokenType.If },
-        { "else", TokenType.Else },
-        { "ptr", TokenType.Ptr },
 
         { "+", TokenType.Plus },
         { "-", TokenType.Minus },
@@ -38,32 +30,58 @@ public static class Lexer
         { "<", TokenType.LessThan },
         { ">", TokenType.GreatThan },
         { "==", TokenType.IsEquals },
+        { "!=", TokenType.IsNotEquals },
+        { "!", TokenType.IsNot },
 
         { "=", TokenType.EqualsSign },
         { "->", TokenType.PtrEqualsSign },
-        { "ref", TokenType.PushByPtr },
-        { "elemOf", TokenType.ElemOf },
-        { "setElem", TokenType.SetElem },
-
         { ",", TokenType.Comma },
         { ".", TokenType.Dot }
     };
 
+    private static readonly IReadOnlyDictionary<string, TokenType> _words = new Dictionary<string, TokenType>
+    {
+        { "end", TokenType.End },
+        { "import", TokenType.Import },
+        { "var", TokenType.Var },
+        { "loop", TokenType.Loop },
+        { "if", TokenType.If },
+        { "in", TokenType.In },
+        { "to", TokenType.To },
+        { "else", TokenType.Else },
+        { "ptr", TokenType.Ptr },
+
+        { "is not", TokenType.IsNotEquals },
+        { "is", TokenType.IsEquals },
+        { "not", TokenType.IsNot },
+        { "gt", TokenType.GreatThan },
+        { "lt", TokenType.LessThan },
+
+        { "and", TokenType.And },
+        { "or", TokenType.Or },
+
+        { "ref", TokenType.PushByPtr },
+        { "elemOf", TokenType.ElemOf },
+        { "setElem", TokenType.SetElem }
+    };
+
+    private static List<Token> _list = new();
+
     public static List<Token> Tokenize(string code)
     {
-        List<Token> list = new();
+        _list = new List<Token>();
 
         _code = code + '\0';
         while (true)
         {
             Token nextToken = GetNextToken();
-            list.Add(nextToken);
+            _list.Add(nextToken);
             if (nextToken.TokenType == TokenType.Eof) break;
         }
 
-        ConnectUnknowns(list);
+        ConnectUnknowns(_list);
 
-        return list;
+        return _list;
     }
 
     private static void ConnectUnknowns(IList<Token> tokens)
@@ -95,16 +113,20 @@ public static class Lexer
         };
         if (token != null) return token;
 
-        if (trimmedCode.StartsWithAny(_words, out KeyValuePair<string, TokenType> word))
-            return ReturnWord(word);
+        if (trimmedCode.StartsWithAny(_symbols, out KeyValuePair<string, TokenType> symbol))
+            return ReturnWordOrSymbol(symbol);
+        
+        bool canWord = _list.Count == 0 || _list[^1].TokenType is TokenType.WhiteSpace or TokenType.NewLine;
+        if (trimmedCode.StartsWithAny(_words, out KeyValuePair<string, TokenType> word) && canWord)
+            return ReturnWordOrSymbol(word);
 
         return new Token(TokenType.Unknown, _code[_position++].ToString());
     }
 
-    private static Token ReturnWord(KeyValuePair<string, TokenType> word)
+    private static Token ReturnWordOrSymbol(KeyValuePair<string, TokenType> pair)
     {
-        _position += word.Key.Length;
-        return new Token(word.Value, word.Key);
+        _position += pair.Key.Length;
+        return new Token(pair.Value, pair.Key);
     }
 
     private static Token ReturnNewLine()

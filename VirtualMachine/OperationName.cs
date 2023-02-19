@@ -35,5 +35,8 @@ public enum InstructionName : byte
     GetPtr,
     SetToPtr,
     PushByPtr,
-    SetElem
+    SetElem,
+    
+    Or,
+    And
 }

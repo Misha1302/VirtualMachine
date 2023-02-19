@@ -117,7 +117,8 @@ public class Parser
     private static bool IsOperator(TokenType x)
     {
         return x is TokenType.Plus or TokenType.Minus or TokenType.Divide or TokenType.Multiply or TokenType.Modulo
-            or TokenType.LessThan or TokenType.GreatThan or TokenType.IsEquals;
+            or TokenType.LessThan or TokenType.GreatThan or TokenType.IsEquals or TokenType.IsNotEquals
+            or TokenType.IsNot;
     }
 
     private static void DetectVariables(IReadOnlyList<Token> tokens)
@@ -182,10 +183,20 @@ public class Parser
             { TokenType.Minus, 1 },
             { TokenType.Multiply, 2 },
             { TokenType.Divide, 2 },
+
+            { TokenType.IsNot, 2 },
+            { TokenType.And, 1 },
+            { TokenType.Or, 1 },
+
+            { TokenType.IsNotEquals, 0 },
+            { TokenType.IsEquals, 0 },
+            { TokenType.LessThan, 0 },
+            { TokenType.GreatThan, 0 },
+
             { TokenType.ForeignMethod, 10 }
         };
 
-        public IEnumerable<Token> Convert(List<Token> list)
+        public IEnumerable<Token> Convert(IReadOnlyList<Token> list)
         {
             List<List<Token>> result = new();
             Stack<List<Token>> tokensStack = new();

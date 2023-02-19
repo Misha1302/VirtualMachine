@@ -177,52 +177,80 @@ public class Parser
         private readonly IReadOnlyDictionary<TokenType, int> _priorities = new Dictionary<TokenType, int>
         {
             { TokenType.OpenParentheses, 0 },
-            { TokenType.CloseParentheses, 1 },
-            { TokenType.Plus, 2 },
-            { TokenType.Minus, 2 },
-            { TokenType.Multiply, 3 },
-            { TokenType.Divide, 3 }
+            { TokenType.CloseParentheses, 0 },
+            { TokenType.Plus, 1 },
+            { TokenType.Minus, 1 },
+            { TokenType.Multiply, 2 },
+            { TokenType.Divide, 2 },
+            { TokenType.ForeignMethod, 10 }
         };
 
-        public IEnumerable<Token> Convert(IEnumerable<Token> range)
+        public IEnumerable<Token> Convert(List<Token> list)
         {
-            List<Token> result = new();
-            Stack<Token> tokensStack = new();
+            List<List<Token>> result = new();
+            Stack<List<Token>> tokensStack = new();
 
-            foreach (Token token in range)
+            List<List<Token>> range = new();
+
+            for (int i = 0; i < list.Count; i++)
             {
-                TokenType tokenType = token.TokenType;
+                Token x = list[i];
+                if (x.TokenType != TokenType.ForeignMethod)
+                {
+                    range.Add(new List<Token> { x });
+                }
+                else
+                {
+                    List<Token> retList = new();
+                    int lvl = 0;
+                    do
+                    {
+                        retList.Add(list[i]);
+                        i++;
+                        if (list[i].TokenType == TokenType.OpenParentheses) lvl++;
+                        if (list[i].TokenType == TokenType.CloseParentheses) lvl--;
+                    } while (lvl != 0);
+
+                    retList.Add(list[i]);
+                    range.Add(retList);
+                }
+            }
+
+
+            foreach (List<Token> tokens in range)
+            {
+                TokenType tokenType = tokens[0].TokenType;
                 if (!IsOperator(tokenType) &&
                     tokenType is not TokenType.OpenParentheses and not TokenType.CloseParentheses)
-                    result.Add(token);
+                    result.Add(tokens);
                 else
                     switch (tokenType)
                     {
                         case TokenType.OpenParentheses:
-                            tokensStack.Push(token);
+                            tokensStack.Push(tokens);
                             break;
                         case TokenType.CloseParentheses:
-                            Token t = tokensStack.Pop();
+                            Token t = tokensStack.Pop()[0];
                             while (t.TokenType != TokenType.OpenParentheses)
                             {
-                                result.Add(t);
-                                t = tokensStack.Pop();
+                                result.Add(new List<Token> { t });
+                                t = tokensStack.Pop()[0];
                             }
 
                             break;
                         default:
-                            if (tokensStack.Count > 0 &&
-                                _priorities[token.TokenType] <= _priorities[tokensStack.Peek().TokenType])
-                                result.Add(tokensStack.Pop());
+                            if (tokensStack.Count > 0)
+                                if (_priorities[tokens[0].TokenType] <= _priorities[tokensStack.Peek()[0].TokenType])
+                                    result.Add(tokensStack.Pop());
 
-                            tokensStack.Push(token);
+                            tokensStack.Push(tokens);
                             break;
                     }
             }
 
             while (tokensStack.Count > 0) result.Add(tokensStack.Pop());
 
-            return result;
+            return result.SelectMany(x => x);
         }
     }
 }

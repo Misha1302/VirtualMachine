@@ -4,14 +4,10 @@ using Tokenizer.Token;
 using VirtualMachine;
 
 const string code = """
-PrintLn(2 + 3) # 5
-PrintLn(5 / 3) # 1.(6)
-PrintLn('Привет!' + ' Мир?') # Привет! Мир?
-
-var x = 5 + 2
-var y = 6
-var z = StringToNumber(Input())
-PrintLn(y / (x + y) * x + z) # 3.23076923076923076923077 + z
+PrintLn(3 + 5 * (((3 - 4) / 3)) / 2.21 * 1 * 2 * 5 / 33) # approximately 2.771470359705654
+loop var i = 0, i < 5, i = i + 1
+    PrintLn('Multiplication equals ' + (StringToNumber(Input()) * StringToNumber(Input())))
+end
 """;
 
 Parser parser = new();

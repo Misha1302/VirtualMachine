@@ -39,6 +39,7 @@ public class VmCompiler
         Token methodToken = _tokens[i];
         i += 2;
         CompileNextBlock(ref i, TokenType.CloseParentheses);
+        i++;
 
         _image.CallForeignMethod(methodToken.Text);
     }

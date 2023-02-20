@@ -73,7 +73,6 @@ public class VmCompiler
 
     private void CompileNextBlock(ref int i, TokenType endTokenType)
     {
-        List<Token> debug = new();
         while (true)
         {
             bool contains = endTokenType.HasFlag(_tokens[i].TokenType);
@@ -82,7 +81,6 @@ public class VmCompiler
             TokenType nextToken = i + 1 != _tokens.Count ? _tokens[i + 1].TokenType : default;
             TokenType previousToken = i != 0 ? _tokens[i - 1].TokenType : default;
 
-            debug.Add(_tokens[i]);
             switch (_tokens[i].TokenType)
             {
                 case TokenType.Variable when CanLoadVariable(nextToken, previousToken):
@@ -129,7 +127,7 @@ public class VmCompiler
                 case TokenType.NewVariable:
                     _image.CreateVariable(_tokens[i].Text);
                     break;
-                case TokenType.Number:
+                case TokenType.Number when CanLoadNumber(nextToken, previousToken):
                     _image.WriteNextOperation(InstructionName.PushConstant, _tokens[i].Value);
                     break;
                 case TokenType.String:
@@ -177,18 +175,27 @@ public class VmCompiler
                 case TokenType.Var:
                 case TokenType.In:
                 case TokenType.To:
+                case TokenType.Of:
                 case TokenType.Comma:
                     break;
                 default:
                     Token token = _tokens[i];
-                    if (token.TokenType == TokenType.Variable)
+                    switch (token.TokenType)
                     {
-                        if (CanLoadVariable(nextToken, previousToken))
+                        case TokenType.Variable:
+                        {
+                            if (CanLoadVariable(nextToken, previousToken))
+                                throw new Exception($"Unexpected token {token}");
+                            break;
+                        }
+                        case TokenType.Number:
+                        {
+                            if (CanLoadNumber(nextToken, previousToken))
+                                throw new Exception($"Unexpected token {token}");
+                            break;
+                        }
+                        default:
                             throw new Exception($"Unexpected token {token}");
-                    }
-                    else
-                    {
-                        throw new Exception($"Unexpected token {token}");
                     }
 
                     break;
@@ -202,6 +209,11 @@ public class VmCompiler
     {
         return nextToken is not TokenType.EqualsSign and not TokenType.PtrEqualsSign and not TokenType.ElemOf
                && previousToken is not TokenType.ElemOf;
+    }
+
+    private static bool CanLoadNumber(TokenType nextToken, TokenType previousToken)
+    {
+        return nextToken is not TokenType.ElemOf;
     }
 
     private void CompileSetElem(ref int i)
@@ -244,8 +256,8 @@ public class VmCompiler
     {
         i++;
         int index = i;
-        int id = (_image.Variables.FindLast(x => x.Name == _tokens[index].Text) ??
-                  throw new InvalidOperationException($"Variable {_tokens[index].Text} was not found")).Id;
+        int id = (_image.Variables.FindLast(x => x.Name == _tokens[index].Text) ?? throw new InvalidOperationException()).Id;
+        if (id == 0) throw new InvalidOperationException($"Variable {_tokens[index].Text} was not found");
         _image.WriteNextOperation(InstructionName.PushConstant, id);
         _image.WriteNextOperation(InstructionName.GetPtr);
     }

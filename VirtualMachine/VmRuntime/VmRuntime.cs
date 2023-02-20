@@ -1,6 +1,5 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
-using System.Collections;
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -43,7 +42,19 @@ public partial class VmRuntime
     private void Execute(IReadOnlyList<Instruction> instructions)
     {
 #if DEBUG
-        IEnumerable<string> unused = instructions.Select(x => x.Method.Name);
+        List<string> unused = instructions.Select(x => x.Method.Name).ToList();
+        StringBuilder stringBuilder = new();
+
+        for (int index = 0; index < unused.Count; index++)
+        {
+            string item = unused[index];
+            stringBuilder.Append($"{index}. {item}");
+            if (Memory.Constants.TryGetValue(index, out object? value))
+                stringBuilder.Append($" - {ObjectToString(value)}");
+            stringBuilder.AppendLine();
+        }
+
+        ;
 #endif
 
 #if !DEBUG
@@ -192,13 +203,13 @@ public partial class VmRuntime
                 return i.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
             case string s:
                 return s;
-            case VmList list when list.All(x => x is char):
+            case VmList list when list.Len != 0 && list.All(x => x is char):
                 return new string(list.Select(x => (char)x!).ToArray());
-            case IEnumerable collection:
-            {
+            case VmList list:
                 StringBuilder stringBuilder = new();
                 stringBuilder.Append('[');
-                foreach (object? item in collection)
+                
+                foreach (object? item in list)
                 {
                     string str = item switch
                     {
@@ -210,10 +221,8 @@ public partial class VmRuntime
                     stringBuilder.Append(str);
                 }
 
-                stringBuilder.Remove(stringBuilder.Length - 2, 2);
                 stringBuilder.Append(']');
                 return stringBuilder.ToString();
-            }
         }
 
         if (obj is IFormattable f)

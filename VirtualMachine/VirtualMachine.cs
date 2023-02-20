@@ -12,7 +12,7 @@ public static class VirtualMachine
         Interlocked.Increment(ref _countOfTasks);
         VmRuntime.VmRuntime runtime = CreateNewRuntime(vmImage);
         if (_countOfTasks == 1) _stopwatch = Stopwatch.StartNew();
-        Task.Run(runtime.Run);
+        new Thread(runtime.Run).Start();
     }
 
     public static void RunAndWait(VmImage vmImage)
@@ -43,7 +43,7 @@ public static class VirtualMachine
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("Program executed without exception");
         Console.ResetColor();
-        
+
         _stopwatch!.Stop();
         Console.WriteLine($"{_stopwatch.ElapsedMilliseconds} ms");
     }
@@ -59,7 +59,7 @@ public static class VirtualMachine
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine(error.Message);
         Console.ResetColor();
-        
+
         Console.WriteLine(vmRuntime.GetStateAsString());
         Console.WriteLine(error.StackTrace);
     }

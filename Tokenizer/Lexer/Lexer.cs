@@ -48,6 +48,7 @@ public static class Lexer
         { "if", TokenType.If },
         { "in", TokenType.In },
         { "to", TokenType.To },
+        { "of", TokenType.Of },
         { "else", TokenType.Else },
         { "ptr", TokenType.Ptr },
 

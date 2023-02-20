@@ -7,10 +7,6 @@ using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
-    private static int _varId;
-    private readonly Predicate<VmVariable> _predicate = x => x.Id == _varId;
-
-
     private void Not()
     {
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
@@ -33,7 +29,32 @@ public partial class VmRuntime
         object? a = Memory.Pop();
         object? b = Memory.Pop();
 
-        Memory.Push((a ?? throw new InvalidOperationException()).Equals(b) ? 1m : 0m);
+        if (a is null && b is null)
+        {
+            Memory.Push(1m);
+            return;
+        }
+
+        if (a is null || b is null)
+        {
+            Memory.Push(null);
+            return;
+        }
+
+        switch (a)
+        {
+            case decimal m:
+                decimal m1 = (decimal)b;
+                Memory.Push(m1.IsEquals(m) ? 1m : 0m);
+                break;
+            case VmList list:
+                VmList list1 = (VmList)b;
+                Memory.Push(list1.SequenceEqual(list) ? 1m : 0m);
+                break;
+            default:
+                Memory.Push(a.Equals(b) ? 1m : 0m);
+                break;
+        }
     }
 
 
@@ -148,22 +169,21 @@ public partial class VmRuntime
 
     private void SetVariable()
     {
-        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out _varId))
+        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out int varId))
             throw new InvalidOperationException($"variable with id {Memory.Ip} was not found");
 
-        List<VmVariable> allVariables = Memory.GetAllVariables();
-        VmVariable vmVariable = allVariables.FindLast(_predicate) ?? throw new InvalidOperationException();
+        VmVariable vmVariable = Memory.FindVariableById(varId);
         vmVariable.ChangeValue(Memory.Pop());
     }
 
 
     private void LoadVariable()
     {
-        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out _varId))
+        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out int varId))
             throw new InvalidOperationException($"variable with id {Memory.Ip} was not found");
 
-        VmVariable value = Memory.GetAllVariables().FindLast(_predicate) ?? throw new InvalidOperationException();
-        Memory.Push(value.Value);
+        VmVariable vmVariable = Memory.FindVariableById(varId);
+        Memory.Push(vmVariable.Value);
     }
 
 
@@ -281,7 +301,8 @@ public partial class VmRuntime
     {
         int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ??
                                    throw new InvalidOperationException());
-        VmVariable var = Memory.GetAllVariables().FindLast(x => x.Id == varId) ?? throw new InvalidOperationException();
+        VmVariable var = Memory.FindVariableById(varId);
+        if (var.Id == 0) throw new Exception("Variable not found");
 
         Memory.CreateVariable(var with { Name = GetNextName(var.Name) });
     }
@@ -321,24 +342,24 @@ public partial class VmRuntime
 
     private void GetPtr()
     {
-        int id = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        int index = (Memory.GetAllVariables().FindLast(x => x.Id == id) ?? throw new InvalidOperationException()).Index;
+        int varId = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        int index  = Memory.FindVariableById(varId).Index;
         Memory.Push((decimal)index);
     }
 
     private void SetToPtr()
     {
         List<VmVariable> allVariables = Memory.GetAllVariables();
-        int id = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        int index = (allVariables.FindLast(x => x.Id == id) ?? throw new InvalidOperationException()).Index;
+        int varId = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        int index = Memory.FindVariableById(varId).Index;
         allVariables[index].ChangeValue(Memory.Pop());
     }
 
     private void PushByPtr()
     {
         List<VmVariable> allVariables = Memory.GetAllVariables();
-        int id = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        int index = (allVariables.FindLast(x => x.Id == id) ?? throw new InvalidOperationException()).Index;
+        int varId = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        int index = Memory.FindVariableById(varId).Index;
         Memory.Push(allVariables[index].Value);
     }
 
@@ -356,6 +377,7 @@ public partial class VmRuntime
         ReadTwoNumbers(out decimal a, out decimal b);
         Memory.Push(a == 1 || b == 1 ? 1m : 0m);
     }
+
     private void And()
     {
         ReadTwoNumbers(out decimal a, out decimal b);

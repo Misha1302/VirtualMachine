@@ -1,5 +1,6 @@
 ﻿namespace VirtualMachine;
 
+using System.Diagnostics;
 using global::VirtualMachine.Variables;
 
 public record VmMemory
@@ -50,6 +51,13 @@ public record VmMemory
     public List<VmVariable> GetAllVariables()
     {
         return _variables;
+    }
+
+    public VmVariable FindVariableById(int id)
+    {
+        VmVariable? var = _variables.FindLast(x => x.Id == id);
+        if (var is null) throw new Exception("Variable not found");
+        return var;
     }
 
     public void DeleteVariable(int varId)

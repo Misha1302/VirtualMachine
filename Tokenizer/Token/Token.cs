@@ -10,4 +10,5 @@ public record Token(TokenType TokenType, string Text, object? Value = null)
     public TokenType TokenType = TokenType;
     
     public bool IsPartOfExpression;
+    public bool IsCallMethodOrFunc => TokenType is TokenType.ForeignMethod or TokenType.Function;
 }

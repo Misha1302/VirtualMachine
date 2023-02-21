@@ -14,9 +14,10 @@ public class Parser
     public List<Token> Tokenize(string code, string mainLibPath, out AssemblyManager assemblyManager)
     {
         List<Token> tokens = Lexer.Tokenize(code);
-        tokens = tokens.Where(x => x.TokenType != TokenType.WhiteSpace && x.TokenType != TokenType.Comment).ToList();
+        tokens = tokens.Where(x => x.TokenType is not TokenType.WhiteSpace and not TokenType.Comment).ToList();
         ImportMethods(tokens, mainLibPath);
         DetectMethods(tokens);
+        DetectFunctions(tokens);
         DetectVariables(tokens);
         SetPartOfExpression(tokens);
         PrecompileExpressions(tokens);
@@ -99,6 +100,7 @@ public class Parser
         int nesting = 0;
         do
         {
+            start:
             switch (tokens[i].TokenType)
             {
                 case TokenType.CloseParentheses:
@@ -111,6 +113,8 @@ public class Parser
 
             tokens[i].IsPartOfExpression = true;
             i += direction;
+            if (nesting == 0 && direction > 0 && tokens[i - 1].IsCallMethodOrFunc) goto start;
+            if (nesting == 0 && direction < 0 && tokens[i].IsCallMethodOrFunc) goto start;
         } while (nesting != 0);
     }
 
@@ -125,7 +129,7 @@ public class Parser
     {
         List<string?> variables = new();
         for (int i = 1; i < tokens.Count; i++)
-            if (tokens[i].TokenType == TokenType.Unknown && Regex.IsMatch(tokens[i].Text, "[_a-zA-Z]+"))
+            if (tokens[i].TokenType == TokenType.Unknown && IsCorrectName(tokens, i))
             {
                 if (tokens[i - 1].TokenType == TokenType.Var)
                 {
@@ -137,6 +141,27 @@ public class Parser
                     tokens[i].TokenType = TokenType.Variable;
                 }
             }
+    }
+
+    private static bool IsCorrectName(IReadOnlyList<Token> tokens, int i)
+    {
+        return Regex.IsMatch(tokens[i].Text, "[_a-zA-Z0-9]+");
+    }
+
+    private static void DetectFunctions(IReadOnlyList<Token> tokens)
+    {
+        List<string> functions = new();
+        for (int i = 1; i < tokens.Count; i++)
+            if (tokens[i].TokenType == TokenType.Unknown && IsCorrectName(tokens, i))
+                if (tokens[i - 1].TokenType == TokenType.Func)
+                {
+                    functions.Add(tokens[i].Text);
+                    tokens[i].TokenType = TokenType.NewFunction;
+                }
+
+        foreach (Token t in tokens)
+            if (functions.Contains(t.Text) && t.TokenType != TokenType.NewFunction)
+                t.TokenType = TokenType.Function;
     }
 
     private void ImportMethods(IReadOnlyList<Token> tokens, string mainLibPath)
@@ -193,7 +218,8 @@ public class Parser
             { TokenType.LessThan, 0 },
             { TokenType.GreatThan, 0 },
 
-            { TokenType.ForeignMethod, 10 }
+            { TokenType.ForeignMethod, 10 },
+            { TokenType.Function, 10 }
         };
 
         public IEnumerable<Token> Convert(IReadOnlyList<Token> list)
@@ -206,7 +232,7 @@ public class Parser
             for (int i = 0; i < list.Count; i++)
             {
                 Token x = list[i];
-                if (x.TokenType != TokenType.ForeignMethod)
+                if (!x.IsCallMethodOrFunc)
                 {
                     range.Add(new List<Token> { x });
                 }

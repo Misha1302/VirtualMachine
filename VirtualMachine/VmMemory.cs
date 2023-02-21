@@ -1,6 +1,5 @@
 ﻿namespace VirtualMachine;
 
-using System.Diagnostics;
 using global::VirtualMachine.Variables;
 
 public record VmMemory

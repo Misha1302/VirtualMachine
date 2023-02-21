@@ -50,7 +50,8 @@ public static class Lexer
         { "to", TokenType.To },
         { "of", TokenType.Of },
         { "else", TokenType.Else },
-        { "ptr", TokenType.Ptr },
+        { "func", TokenType.Func },
+        { "return", TokenType.Return },
 
         { "is not", TokenType.IsNotEquals },
         { "is", TokenType.IsEquals },
@@ -62,6 +63,8 @@ public static class Lexer
         { "or", TokenType.Or },
 
         { "ref", TokenType.PushByPtr },
+        { "ptr", TokenType.Ptr },
+        
         { "elemOf", TokenType.ElemOf },
         { "setElem", TokenType.SetElem }
     };
@@ -103,7 +106,7 @@ public static class Lexer
         char c = _code[_position];
         if (trimmedCode.StartsWith("\r\n")) return ReturnNewLine();
         if (char.IsWhiteSpace(c)) return ReturnWhitespace(c);
-        if (char.IsDigit(c)) return GetNumber();
+        if (char.IsDigit(c) && PreviousTokenIsDelimiter()) return GetNumber();
 
         Token? token = c switch
         {
@@ -117,11 +120,17 @@ public static class Lexer
         if (trimmedCode.StartsWithAny(_symbols, out KeyValuePair<string, TokenType> symbol))
             return ReturnWordOrSymbol(symbol);
         
-        bool canWord = _list.Count == 0 || _list[^1].TokenType is TokenType.WhiteSpace or TokenType.NewLine;
+        bool canWord = _list.Count == 0 || PreviousTokenIsDelimiter();
         if (trimmedCode.StartsWithAny(_words, out KeyValuePair<string, TokenType> word) && canWord)
             return ReturnWordOrSymbol(word);
 
         return new Token(TokenType.Unknown, _code[_position++].ToString());
+    }
+
+    private static bool PreviousTokenIsDelimiter()
+    {
+        return _list[^1].TokenType is TokenType.WhiteSpace or TokenType.NewLine or TokenType.OpenParentheses
+            or TokenType.CloseParentheses;
     }
 
     private static Token ReturnWordOrSymbol(KeyValuePair<string, TokenType> pair)

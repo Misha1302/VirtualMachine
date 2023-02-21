@@ -2,7 +2,6 @@
 
 namespace Library;
 
-using System.Runtime.CompilerServices;
 using VirtualMachine.Variables;
 using VirtualMachine.VmRuntime;
 

@@ -63,7 +63,11 @@ public partial class VmRuntime
         {
             OnProgramStart?.Invoke(this);
             int instructionsCount = instructions.Count;
-            for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++) instructions[Memory.Ip]();
+            for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++)
+            {
+                // Console.WriteLine(instructions[Memory.Ip].Method.Name);
+                instructions[Memory.Ip]();
+            }
         }
 #if !DEBUG
         catch (Exception ex)
@@ -208,7 +212,7 @@ public partial class VmRuntime
             case VmList list:
                 StringBuilder stringBuilder = new();
                 stringBuilder.Append('[');
-                
+
                 foreach (object? item in list)
                 {
                     string str = item switch

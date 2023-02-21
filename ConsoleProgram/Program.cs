@@ -4,15 +4,21 @@ using Tokenizer.Token;
 using VirtualMachine;
 
 const string code = """
-PrintLn((StringToNumber('23')) + (StringToNumber('32')))
+myFunction1()
+myFunction2()
 
-var a = []
-0 setElem of a to 234
-1 setElem of a to 234
+func myFunction1()
+    PrintLn(StringToNumber('23') + StringToNumber('32') + 2)
+end
 
-PrintLn(0 elemOf a)
-PrintLn(1 elemOf a)
-PrintLn((0 elemOf a) == (1 elemOf a))
+func myFunction3(var a)
+    return 2 + a
+end
+
+func myFunction2()
+    var q = StringToNumber(Input()) + myFunction3(5)
+    PrintLn(q * q / 2)
+end
 """;
 
 Parser parser = new();

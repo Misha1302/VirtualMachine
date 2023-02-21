@@ -257,7 +257,7 @@ public partial class VmRuntime
 
     private void Halt()
     {
-        Memory.Ip = int.MaxValue;
+        Memory.Ip = Memory.InstructionsArray.Length + 1;
     }
 
 

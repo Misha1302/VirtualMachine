@@ -2,7 +2,6 @@
 
 using System.Data;
 using System.Text;
-using System.Text.RegularExpressions;
 using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
@@ -245,13 +244,15 @@ public partial class VmRuntime
 
     private void PushAddress()
     {
-        Memory.RecursionStack.Push(Memory.Ip + 2);
+        object?[] constants = (object?[])(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
+        Memory.OnCallingFunction((string)(constants[0] ?? throw new InvalidOperationException()),
+            (int)(constants[1] ?? throw new InvalidOperationException()));
     }
 
 
     private void Ret()
     {
-        Memory.Ip = Memory.RecursionStack.Pop();
+        Memory.OnFunctionExit();
     }
 
 
@@ -270,17 +271,8 @@ public partial class VmRuntime
 
     private void CreateVariable()
     {
-        VmVariable var =
-            (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
-        Memory.CreateVariable(var with { Name = GetNextName(var.Name) });
-    }
-
-
-    private static string GetNextName(string varName)
-    {
-        if (IsNumber().IsMatch(varName[^1].ToString()))
-            return varName[..^1] + (int.Parse(varName[^1].ToString()) + 1);
-        return varName + '0';
+        VmVariable var = (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
+        if (Memory.GetAllVariables().FindIndex(x => x.Id == var.Id) == -1) Memory.CreateVariable(var);
     }
 
 
@@ -297,25 +289,9 @@ public partial class VmRuntime
     }
 
 
-    private void CopyVariable()
-    {
-        int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ??
-                                   throw new InvalidOperationException());
-        VmVariable var = Memory.FindVariableById(varId);
-        if (var.Id == 0) throw new Exception("Variable not found");
-
-        Memory.CreateVariable(var with { Name = GetNextName(var.Name) });
-    }
-
-    [GeneratedRegex("\\d+")]
-    private static partial Regex IsNumber();
-
-
     private void DeleteVariable()
     {
-        int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ??
-                                   throw new InvalidOperationException());
-
+        int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
         Memory.DeleteVariable(varId);
     }
 
@@ -343,7 +319,7 @@ public partial class VmRuntime
     private void GetPtr()
     {
         int varId = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        int index  = Memory.FindVariableById(varId).Index;
+        int index = Memory.FindVariableById(varId).Index;
         Memory.Push((decimal)index);
     }
 

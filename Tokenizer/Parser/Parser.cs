@@ -118,7 +118,7 @@ public class Parser
         } while (nesting != 0);
     }
 
-    private static bool IsOperator(TokenType x)
+    public static bool IsOperator(TokenType x)
     {
         return x is TokenType.Plus or TokenType.Minus or TokenType.Divide or TokenType.Multiply or TokenType.Modulo
             or TokenType.LessThan or TokenType.GreatThan or TokenType.IsEquals or TokenType.IsNotEquals
@@ -208,6 +208,7 @@ public class Parser
             { TokenType.Minus, 1 },
             { TokenType.Multiply, 2 },
             { TokenType.Divide, 2 },
+            { TokenType.Modulo, 3 },
 
             { TokenType.IsNot, 2 },
             { TokenType.And, 1 },

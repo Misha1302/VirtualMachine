@@ -6,9 +6,9 @@ public record Token(TokenType TokenType, string Text, object? Value = null)
     public readonly uint IndividualNumber = _number++;
 
     public readonly object? Value = Value;
+
+    public bool IsPartOfExpression;
     public string Text = Text;
     public TokenType TokenType = TokenType;
-    
-    public bool IsPartOfExpression;
     public bool IsCallMethodOrFunc => TokenType is TokenType.ForeignMethod or TokenType.Function;
 }

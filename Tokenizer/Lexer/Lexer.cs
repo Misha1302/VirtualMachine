@@ -2,6 +2,7 @@
 
 using System.Text;
 using System.Text.RegularExpressions;
+using Tokenizer.Parser;
 using Tokenizer.Token;
 
 public static class Lexer
@@ -64,7 +65,7 @@ public static class Lexer
 
         { "ref", TokenType.PushByPtr },
         { "ptr", TokenType.Ptr },
-        
+
         { "elemOf", TokenType.ElemOf },
         { "setElem", TokenType.SetElem }
     };
@@ -119,9 +120,10 @@ public static class Lexer
 
         if (trimmedCode.StartsWithAny(_symbols, out KeyValuePair<string, TokenType> symbol))
             return ReturnWordOrSymbol(symbol);
-        
-        bool canWord = _list.Count == 0 || PreviousTokenIsDelimiter();
-        if (trimmedCode.StartsWithAny(_words, out KeyValuePair<string, TokenType> word) && canWord)
+
+        bool canWord = PreviousTokenIsDelimiter();
+        if (canWord && trimmedCode.StartsWithAny(_words, out KeyValuePair<string, TokenType> word) &&
+            !Regex.IsMatch(_code[_position + word.Key.Length].ToString(), "[a-zA-Z_]"))
             return ReturnWordOrSymbol(word);
 
         return new Token(TokenType.Unknown, _code[_position++].ToString());
@@ -129,8 +131,11 @@ public static class Lexer
 
     private static bool PreviousTokenIsDelimiter()
     {
-        return _list[^1].TokenType is TokenType.WhiteSpace or TokenType.NewLine or TokenType.OpenParentheses
-            or TokenType.CloseParentheses;
+        if (_list.Count == 0) return true;
+
+        TokenType tokenType = _list[^1].TokenType;
+        return tokenType is TokenType.WhiteSpace or TokenType.NewLine or TokenType.OpenParentheses
+            or TokenType.CloseParentheses or TokenType.Comma || Parser.IsOperator(tokenType);
     }
 
     private static Token ReturnWordOrSymbol(KeyValuePair<string, TokenType> pair)

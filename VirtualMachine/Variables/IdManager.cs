@@ -2,10 +2,8 @@ namespace VirtualMachine.Variables;
 
 internal static class IdManager
 {
-    private static int _maxId;
-
-    public static int GetNewId()
+    public static int GetNewId(string name)
     {
-        return _maxId++;
+        return name.GetHashCode();
     }
 }

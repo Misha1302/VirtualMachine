@@ -4,20 +4,40 @@ using Tokenizer.Token;
 using VirtualMachine;
 
 const string code = """
-myFunction1()
-myFunction2()
+loop var i = 0, i < 300, i = i + 1
+    var isPrime = IsPrime(i)
 
-func myFunction1()
-    PrintLn(StringToNumber('23') + StringToNumber('32') + 2)
+    if isPrime == 1 
+        PrintLn(i + ' is prime')
+    else 
+        PrintLn(i + ' is not prime') 
+    end
 end
 
-func myFunction3(var a)
-    return 2 + a
-end
 
-func myFunction2()
-    var q = StringToNumber(Input()) + myFunction3(5)
-    PrintLn(q * q / 2)
+func IsPrime(var q)
+    if q < 2 
+        return 0 
+    end
+    
+    if q == 2 
+        return 1 
+    end
+    
+    if q % 2 == 0 
+        return 0 
+    end
+    
+
+
+    var upper = q + 0.01
+    loop var i = 3, (i * i) < upper, i = i + 2
+        if q % i == 0 
+            return 0 
+        end
+    end
+
+    return 1
 end
 """;
 

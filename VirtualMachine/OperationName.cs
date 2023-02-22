@@ -25,7 +25,6 @@ public enum InstructionName : byte
     PushAddress,
     CreateVariable,
     PushConstant,
-    CopyVariable,
     DeleteVariable,
     NoOperation,
     ElemOf,
@@ -36,7 +35,7 @@ public enum InstructionName : byte
     SetToPtr,
     PushByPtr,
     SetElem,
-    
+
     Or,
     And
 }

@@ -54,6 +54,7 @@ public partial class VmRuntime
             stringBuilder.AppendLine();
         }
 
+        // ReSharper disable once EmptyStatement
         ;
 #endif
 
@@ -64,10 +65,8 @@ public partial class VmRuntime
             OnProgramStart?.Invoke(this);
             int instructionsCount = instructions.Count;
             for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++)
-            {
                 // Console.WriteLine(instructions[Memory.Ip].Method.Name);
                 instructions[Memory.Ip]();
-            }
         }
 #if !DEBUG
         catch (Exception ex)
@@ -114,7 +113,6 @@ public partial class VmRuntime
                 InstructionName.And => And,
                 InstructionName.Jump => Jump,
                 InstructionName.CreateVariable => CreateVariable,
-                InstructionName.CopyVariable => CopyVariable,
                 InstructionName.PushConstant => PushConstant,
                 InstructionName.DeleteVariable => DeleteVariable,
                 InstructionName.NoOperation => NoOperation,

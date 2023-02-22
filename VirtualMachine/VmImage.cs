@@ -45,23 +45,23 @@ public class VmImage
         IncreaseMemArrayIfItNeed();
     }
 
-    public void WriteNextOperation(InstructionName operation, object? arg)
+    public void WriteNextOperation(InstructionName operation, params object?[] args)
     {
         _memory.InstructionsArray[_ip] = operation;
         _ip++;
 
         IncreaseMemArrayIfItNeed();
 
-        arg = arg switch
-        {
-            int i => (decimal)i,
-            long l => (decimal)l,
-            float f => (decimal)f,
-            double d => (decimal)d,
-            _ => arg
-        };
-
-        WriteNextConstant(arg);
+        if (args.Length != 1) WriteNextConstant(args);
+        else
+            WriteNextConstant(args[0] switch
+            {
+                int i => (decimal)i,
+                long l => (decimal)l,
+                float f => (decimal)f,
+                double d => (decimal)d,
+                _ => args[0]
+            });
     }
 
     private void IncreaseMemArrayIfItNeed()
@@ -111,18 +111,8 @@ public class VmImage
 
     public void CreateVariable(string varName)
     {
-        VmVariable? var = Variables.FindLast(x => x.Name == varName);
-
-        if (var is not null)
-        {
-            WriteNextOperation(InstructionName.CopyVariable, var.Id);
-        }
-        else
-        {
-            var = new VmVariable(varName);
-            WriteNextOperation(InstructionName.CreateVariable, var);
-        }
-
+        VmVariable var = new(varName);
+        WriteNextOperation(InstructionName.CreateVariable, var);
         Variables.Add(var);
     }
 
@@ -188,11 +178,11 @@ public class VmImage
         WriteNextOperation(InstructionName.Ret);
     }
 
-    public void Call(string funcName)
+    public void Call(string funcName, int paramsCount)
     {
         // 1. push return address
         // 2. goto to label
-        WriteNextOperation(InstructionName.PushAddress);
+        WriteNextOperation(InstructionName.PushAddress, funcName, paramsCount);
         Goto(funcName, InstructionName.Jump);
     }
 

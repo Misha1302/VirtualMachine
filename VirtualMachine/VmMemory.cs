@@ -44,7 +44,6 @@ public record VmMemory
     public void CreateVariable(VmVariable vmVariable)
     {
         vmVariable.ChangeValue(null);
-        vmVariable.SetIndex(_currentFunctionFrame.Variables.Count);
         _currentFunctionFrame.Variables.Add(vmVariable);
     }
 

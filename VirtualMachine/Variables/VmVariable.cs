@@ -7,7 +7,6 @@ public record VmVariable(string Name, bool IsConst = false)
 {
     public readonly int Id = IdManager.GetNewId(Name);
     public readonly bool IsConst = IsConst;
-    public int Index;
     public string Name = Name;
     public object? Value;
 
@@ -15,10 +14,5 @@ public record VmVariable(string Name, bool IsConst = false)
     {
         if (IsConst) throw new Exception("Variable is const");
         Value = value;
-    }
-
-    public void SetIndex(int index)
-    {
-        Index = index;
     }
 }

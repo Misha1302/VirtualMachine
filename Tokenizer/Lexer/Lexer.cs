@@ -35,7 +35,6 @@ public static class Lexer
         { "!", TokenType.IsNot },
 
         { "=", TokenType.EqualsSign },
-        { "->", TokenType.PtrEqualsSign },
         { ",", TokenType.Comma },
         { ".", TokenType.Dot }
     };
@@ -62,9 +61,6 @@ public static class Lexer
 
         { "and", TokenType.And },
         { "or", TokenType.Or },
-
-        { "ref", TokenType.PushByPtr },
-        { "ptr", TokenType.Ptr },
 
         { "elemOf", TokenType.ElemOf },
         { "setElem", TokenType.SetElem }

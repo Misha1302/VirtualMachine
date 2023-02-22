@@ -316,29 +316,6 @@ public partial class VmRuntime
         _ = Memory.Pop();
     }
 
-    private void GetPtr()
-    {
-        int varId = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        int index = Memory.FindVariableById(varId).Index;
-        Memory.Push((decimal)index);
-    }
-
-    private void SetToPtr()
-    {
-        List<VmVariable> allVariables = Memory.GetAllVariables();
-        int varId = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        int index = Memory.FindVariableById(varId).Index;
-        allVariables[index].ChangeValue(Memory.Pop());
-    }
-
-    private void PushByPtr()
-    {
-        List<VmVariable> allVariables = Memory.GetAllVariables();
-        int varId = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        int index = Memory.FindVariableById(varId).Index;
-        Memory.Push(allVariables[index].Value);
-    }
-
     private void SetElem()
     {
         object? obj = Memory.Pop();

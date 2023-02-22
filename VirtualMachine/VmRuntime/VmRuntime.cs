@@ -118,9 +118,6 @@ public partial class VmRuntime
                 InstructionName.NoOperation => NoOperation,
                 InstructionName.ElemOf => ElemOf,
                 InstructionName.SetElem => SetElem,
-                InstructionName.GetPtr => GetPtr,
-                InstructionName.SetToPtr => SetToPtr,
-                InstructionName.PushByPtr => PushByPtr,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);

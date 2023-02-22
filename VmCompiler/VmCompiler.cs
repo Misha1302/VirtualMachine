@@ -162,19 +162,6 @@ public class VmCompiler
                 case TokenType.Divide:
                     _image.WriteNextOperation(InstructionName.Divide);
                     break;
-                case TokenType.Ptr:
-                    CompilePtr();
-                    break;
-                case TokenType.PushByPtr:
-                    PushByPtr();
-                    break;
-                case TokenType.ElemOf:
-                    CompileElemOf();
-                    break;
-                case TokenType.PtrEqualsSign:
-                    CompilePtrSet();
-                    _i--;
-                    break;
                 case TokenType.ForeignMethod:
                     CompileMethod();
                     _i--;
@@ -269,8 +256,7 @@ public class VmCompiler
 
     private static bool CanLoadVariable(TokenType nextToken, TokenType previousToken)
     {
-        return nextToken is not TokenType.EqualsSign and not TokenType.PtrEqualsSign and not TokenType.ElemOf
-               && previousToken is not TokenType.ElemOf;
+        return nextToken is not TokenType.EqualsSign and not TokenType.ElemOf && previousToken is not TokenType.ElemOf;
     }
 
     private static bool CanLoadNumber(TokenType nextToken)

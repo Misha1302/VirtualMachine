@@ -1,14 +1,18 @@
 ﻿namespace VirtualMachine;
 
+using System.Diagnostics;
 using global::VirtualMachine.Variables;
+using global::VirtualMachine.VmRuntime;
 
 public record VmMemory
 {
     private const int RecursionSize = 0xFFFF;
+
+    private readonly object?[] _params = new object?[32];
     public readonly VmList<FunctionFrame> FunctionFrames = new();
-    public FunctionFrame CurrentFunctionFrame;
     public readonly Stack<int> RecursionStack = new(RecursionSize);
     public Dictionary<int, object?> Constants = new(64);
+    public FunctionFrame CurrentFunctionFrame;
     public InstructionName[] InstructionsArray = Array.Empty<InstructionName>();
 
     public int Ip; // instruction pointer
@@ -21,7 +25,7 @@ public record VmMemory
 
     public Stack<object?> GetStack()
     {
-        return new Stack<object?>(CurrentFunctionFrame.Stack);
+        return new Stack<object?>(CurrentFunctionFrame.Stack[..CurrentFunctionFrame.Sp].Reverse());
     }
 
     public void Push(object? obj)
@@ -69,11 +73,10 @@ public record VmMemory
         RecursionStack.Push(Ip + 2);
         FunctionFrames.AddToEnd(new FunctionFrame(funcName));
 
-        object?[] @params = new object?[32];
-        for (int i = 0; i < paramsCount; i++) @params[i] = Pop();
+        for (int i = 0; i < paramsCount; i++) _params[i] = Pop();
 
         CurrentFunctionFrame = FunctionFrames.GetEnd();
-        for (int i = 0; i < paramsCount; i++) Push(@params[i]);
+        for (int i = 0; i < paramsCount; i++) Push(_params[i]);
     }
 
     public void OnFunctionExit()
@@ -86,18 +89,5 @@ public record VmMemory
         CurrentFunctionFrame = FunctionFrames.GetEnd();
 
         Push(returnObject);
-    }
-}
-
-public struct FunctionFrame
-{
-    public readonly string FuncName;
-    public int Sp = 0;
-    public readonly object?[] Stack = new object?[0x80];
-    public readonly List<VmVariable> Variables = new(64);
-
-    public FunctionFrame(string funcName)
-    {
-        FuncName = funcName;
     }
 }

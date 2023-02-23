@@ -3,45 +3,55 @@ using Tokenizer.Parser;
 using Tokenizer.Token;
 using VirtualMachine;
 
+
 const string code = """
-var arrayOfPrimeNumbers = []
+Main()
 
-Print('start: ')
-var start = StringToNumber(Input())
-Print('upper: ')
-var upper = StringToNumber(Input())
+func Main()
+    var arrayOfPrimeNumbers = []
 
-var n = 0
-loop var i = start, i < upper, i = i + 1
-    var isPrime = IsPrime(i)
+    Print('start: ')
+    var start = StringToNumber(Input())
+    Print('upper: ')
+    var upper = StringToNumber(Input())
 
-    if isPrime == 1 
-        n setElem of arrayOfPrimeNumbers to i
-        n = n + 1
+    var n = 0
+    loop var i = start, i < upper, i = i + 1
+        var isPrime = IsPrime(i)
+
+        if isPrime == 1 
+            n setElem of arrayOfPrimeNumbers to i
+            n = n + 1
+        end
     end
+
+    if LenOf(arrayOfPrimeNumbers) == 0
+        PrintLn('prime numbers was not found')
+        return 0
+    end
+
+    var minDelta = MaxNumber()
+    var maxDelta = MinNumber()
+
+    Print('all prime numbers in the given range: ')
+    Print(0 elemOf arrayOfPrimeNumbers + ',')
+    loop var i = 1, i < LenOf(arrayOfPrimeNumbers), i = i + 1
+        Print(i elemOf arrayOfPrimeNumbers + ',')
+
+        var delta = (i elemOf arrayOfPrimeNumbers) - ((i - 1) elemOf arrayOfPrimeNumbers)
+        if delta > maxDelta
+            maxDelta = delta
+        end
+
+        if delta < minDelta
+            minDelta = delta
+        end
+    end
+    Print('\b \n')
+
+    PrintLn('min delta - ' + minDelta)
+    PrintLn('max delta - ' +maxDelta)
 end
-
-var minDelta = MaxNumber()
-var maxDelta = MinNumber()
-
-Print('all prime numbers in the given range: ')
-Print(0 elemOf arrayOfPrimeNumbers + ',')
-loop var i = 1, i < LenOf(arrayOfPrimeNumbers), i = i + 1
-    Print(i elemOf arrayOfPrimeNumbers + ',')
-
-    var delta = (i elemOf arrayOfPrimeNumbers) - ((i - 1) elemOf arrayOfPrimeNumbers)
-    if delta > maxDelta
-        maxDelta = delta
-    end
-
-    if delta < minDelta
-        minDelta = delta
-    end
-end
-Print('\b \n')
-
-PrintLn('min delta - ' + minDelta)
-PrintLn('max delta - ' +maxDelta)
 
 
 func IsPrime(var q)

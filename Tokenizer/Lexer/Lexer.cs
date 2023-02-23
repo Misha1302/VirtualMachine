@@ -33,6 +33,7 @@ public static class Lexer
         { "==", TokenType.IsEquals },
         { "!=", TokenType.IsNotEquals },
         { "!", TokenType.IsNot },
+        { "@", TokenType.AtSign },
 
         { "=", TokenType.EqualsSign },
         { ",", TokenType.Comma },
@@ -71,8 +72,9 @@ public static class Lexer
     public static List<Token> Tokenize(string code)
     {
         _list = new List<Token>();
-
         _code = code + '\0';
+        _position = 0;
+
         while (true)
         {
             Token nextToken = GetNextToken();
@@ -108,7 +110,7 @@ public static class Lexer
         Token? token = c switch
         {
             EofCharacter => new Token(TokenType.Eof, EofCharacter.ToString()),
-            StringCharacter => GetString(),
+            StringCharacter => GetString(_list.Count == 0 || _list[^1].TokenType != TokenType.AtSign),
             SingleLineComment => GetComment(),
             _ => null
         };
@@ -175,7 +177,7 @@ public static class Lexer
         return new Token(TokenType.Number, str, decimal.Parse(str));
     }
 
-    private static Token GetString()
+    private static Token GetString(bool isNormalString)
     {
         _position++;
         int startOfStringIndex = _position;
@@ -183,7 +185,7 @@ public static class Lexer
 
         string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length + 1;
-        str = NormalizeString(str);
+        if (isNormalString) str = NormalizeString(str);
         return new Token(TokenType.String, str, str);
     }
 
@@ -196,8 +198,7 @@ public static class Lexer
             { "(?<!(\\\\))\\\\r", "\r" },
             { "(?<!(\\\\))\\\\n", "\n" },
             { "(?<!(\\\\))\\\\b", "\b" },
-            { "(?<!(\\\\))\\\\0", "\0" },
-            { "\\\\\\\\", "\\" }
+            { "(?<!(\\\\))\\\\0", "\0" }
         };
 
         return dict.Aggregate(str, (current, pair) => Regex.Replace(current, pair.Key, pair.Value));

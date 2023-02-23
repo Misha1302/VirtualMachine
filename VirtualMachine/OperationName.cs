@@ -31,9 +31,6 @@ public enum InstructionName : byte
     GreatThan,
     Drop,
     Modulo,
-    GetPtr,
-    SetToPtr,
-    PushByPtr,
     SetElem,
 
     Or,

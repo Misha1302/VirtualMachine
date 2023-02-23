@@ -14,27 +14,39 @@ public class Parser
     public List<Token> Tokenize(string code, string mainLibPath, out AssemblyManager assemblyManager)
     {
         List<Token> tokens = Lexer.Tokenize(code);
-        tokens = tokens.Where(x => x.TokenType is not TokenType.WhiteSpace and not TokenType.Comment).ToList();
+        tokens = tokens.Where(x =>
+            x.TokenType is not TokenType.WhiteSpace and not TokenType.Comment and not TokenType.AtSign).ToList();
         ImportMethods(tokens, mainLibPath);
         DetectMethods(tokens);
         DetectFunctions(tokens);
         DetectVariables(tokens);
-        PrepareElemOfAndSetElem(tokens);
         SetPartOfExpression(tokens);
+        PrepareElemOfAndSetElem(tokens);
         PrecompileExpressions(tokens);
 
         assemblyManager = _assemblyManager;
         return tokens;
     }
 
-    private void PrepareElemOfAndSetElem(List<Token> tokens)
+    private static void PrepareElemOfAndSetElem(IList<Token> tokens)
     {
         for (int i = 0; i < tokens.Count - 1; i++)
-            if (tokens[i].TokenType is TokenType.ElemOf or TokenType.SetElem)
+        {
+            TokenType tokenType = tokens[i].TokenType;
+            switch (tokenType)
             {
-                (tokens[i], tokens[i + 1]) = (tokens[i + 1], tokens[i]);
-                i++;
+                case TokenType.ElemOf:
+                    (tokens[i], tokens[i + 1]) = (tokens[i + 1], tokens[i]);
+                    i++;
+                    break;
+                case TokenType.SetElem:
+                    Token token = tokens[i];
+                    tokens.RemoveAt(i);
+                    while (tokens[i].TokenType != TokenType.NewLine) i++;
+                    tokens.Insert(i, token);
+                    break;
             }
+        }
     }
 
     private static void PrecompileExpressions(List<Token> tokens)
@@ -124,8 +136,8 @@ public class Parser
 
             tokens[i].IsPartOfExpression = true;
             i += direction;
-            if (nesting == 0 && direction > 0 && tokens[i - 1].IsCallMethodOrFunc) goto start;
-            if (nesting == 0 && direction < 0 && tokens[i].IsCallMethodOrFunc) goto start;
+            if (i >= 0 && nesting == 0 && direction > 0 && tokens[i - 1].IsCallMethodOrFunc) goto start;
+            if (i >= 0 && nesting == 0 && direction < 0 && tokens[i].IsCallMethodOrFunc) goto start;
         } while (nesting != 0);
     }
 
@@ -175,18 +187,36 @@ public class Parser
                 t.TokenType = TokenType.Function;
     }
 
-    private void ImportMethods(IReadOnlyList<Token> tokens, string mainLibPath)
+    private void ImportMethods(List<Token> tokens, string mainLibPath)
     {
-        ImportMethodsFromMainLibrary(mainLibPath);
+        ImportAllMethodsFromLibrary(mainLibPath);
 
         for (int i = 0; i < tokens.Count; i++)
             if (tokens[i].TokenType == TokenType.Import)
-                _assemblyManager.ImportMethodFromAssembly(Path.GetFullPath(tokens[i + 1].Text), tokens[i + 2].Text);
+            {
+                string methodName = tokens[i + 2].Text;
+                string libPath = tokens[i + 1].Text;
+
+                if (methodName == "*") ImportAllMethodsFromLibrary(libPath);
+                else _assemblyManager.ImportMethodFromAssembly(Path.GetFullPath(libPath), methodName);
+                i += 2;
+            }
+
+
+        for (int i = 0; i < tokens.Count; i++)
+            if (tokens[i].TokenType == TokenType.Import)
+            {
+                int iStart = i;
+                while (tokens[i].TokenType != TokenType.NewLine) i++;
+                int iEnd = i;
+
+                tokens.RemoveRange(iStart, iEnd - iStart);
+            }
     }
 
-    private void ImportMethodsFromMainLibrary(string mainLibPath)
+    private void ImportAllMethodsFromLibrary(string libPath)
     {
-        Assembly assembly = Assembly.LoadFrom(mainLibPath);
+        Assembly assembly = Assembly.LoadFrom(libPath);
         Type @class = assembly.GetType("Library.Library") ?? throw new InvalidOperationException();
         IEnumerable<MethodInfo> methods = @class.GetMethods()
             .Where(x =>
@@ -197,7 +227,7 @@ public class Parser
             });
 
         foreach (MethodInfo method in methods)
-            _assemblyManager.ImportMethodFromAssembly(mainLibPath, method.Name);
+            _assemblyManager.ImportMethodFromAssembly(libPath, method.Name);
     }
 
     private void DetectMethods(IEnumerable<Token> tokens)

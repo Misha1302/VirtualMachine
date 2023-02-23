@@ -18,6 +18,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\ConsoleProgram\ConsoleProgram.csproj"/>
+        <ProjectReference Include="..\MathLibrary\MathLibrary.csproj"/>
         <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj"/>
     </ItemGroup>
 

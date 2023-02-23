@@ -112,7 +112,7 @@ public class VmCompiler
                     _image.WriteNextOperation(InstructionName.Modulo);
                     break;
                 case TokenType.SetElem:
-                    CompileSetElem();
+                    _image.WriteNextOperation(InstructionName.SetElem);
                     break;
                 case TokenType.IsEquals:
                     _image.WriteNextOperation(InstructionName.Equals);
@@ -178,7 +178,7 @@ public class VmCompiler
                     CompileLoop();
                     break;
                 case TokenType.ElemOf:
-                    CompileElemOf();
+                    _image.WriteNextOperation(InstructionName.ElemOf);
                     break;
                 case TokenType.Func:
                 case TokenType.NewLine:
@@ -187,6 +187,8 @@ public class VmCompiler
                 case TokenType.To:
                 case TokenType.Of:
                 case TokenType.Comma:
+                case TokenType.OpenParentheses:
+                case TokenType.CloseParentheses:
                     break;
                 default:
                     Token token = _tokens[_i];
@@ -258,30 +260,11 @@ public class VmCompiler
         return nextToken is not TokenType.EqualsSign;
     }
 
-    private void CompileSetElem()
-    {
-        _i++;
-        CompileNextBlock(TokenType.NewLine);
-        _image.WriteNextOperation(InstructionName.SetElem);
-    }
-
     private void CompileList()
     {
         _image.WriteNextOperation(InstructionName.PushConstant, new VmList());
         PassTokensBeforeNext(TokenType.NewLine);
         _i--;
-    }
-
-    private void CompileElemOf()
-    {
-        // Token a = _tokens[_i - 1];
-        // Token b = _tokens[_i + 1];
-        //
-        // if (a.TokenType == TokenType.Number) _image.WriteNextOperation(InstructionName.PushConstant, a.Value);
-        // else _image.LoadVariable(a.Text);
-        //
-        // _image.LoadVariable(b.Text);
-        _image.WriteNextOperation(InstructionName.ElemOf);
     }
 
     private void CompileElse()

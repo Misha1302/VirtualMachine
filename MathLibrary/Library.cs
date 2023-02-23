@@ -117,7 +117,7 @@ public static class Library
     // full license information.
     // </copyright>
 
-    private static class NeilMath
+    public static class NeilMath
     {
         public const decimal E = 2.7182818284590452353602874714m;
 

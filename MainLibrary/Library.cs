@@ -31,7 +31,7 @@ public static class Library
             _ => throw new InvalidOperationException(
                 $"Unable to find length from object {VmRuntime.ObjectToString(obj)}")
         };
-        
+
         vmRuntime.Memory.Push(dec);
     }
 

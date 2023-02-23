@@ -92,11 +92,10 @@ public class VmCompiler
             if (contains) break;
 
             TokenType nextToken = _i + 1 != _tokens.Count ? _tokens[_i + 1].TokenType : default;
-            TokenType previousToken = _i != 0 ? _tokens[_i - 1].TokenType : default;
 
             switch (_tokens[_i].TokenType)
             {
-                case TokenType.Variable when CanLoadVariable(nextToken, previousToken):
+                case TokenType.Variable when CanLoadVariable(nextToken):
                     _image.LoadVariable(_tokens[_i].Text);
                     break;
                 case TokenType.OpenBracket:
@@ -138,7 +137,7 @@ public class VmCompiler
                 case TokenType.NewVariable:
                     _image.CreateVariable(_tokens[_i].Text);
                     break;
-                case TokenType.Number when CanLoadNumber(nextToken):
+                case TokenType.Number:
                     _image.WriteNextOperation(InstructionName.PushConstant, _tokens[_i].Value);
                     break;
                 case TokenType.String:
@@ -178,6 +177,9 @@ public class VmCompiler
                 case TokenType.Loop:
                     CompileLoop();
                     break;
+                case TokenType.ElemOf:
+                    CompileElemOf();
+                    break;
                 case TokenType.Func:
                 case TokenType.NewLine:
                 case TokenType.Var:
@@ -191,11 +193,8 @@ public class VmCompiler
                     switch (token.TokenType)
                     {
                         case TokenType.Variable:
-                            if (CanLoadVariable(nextToken, previousToken))
+                            if (CanLoadVariable(nextToken))
                                 throw new Exception($"Unexpected token {token}");
-                            break;
-                        case TokenType.Number:
-                            if (CanLoadNumber(nextToken)) throw new Exception($"Unexpected token {token}");
                             break;
                         default:
                             throw new Exception($"Unexpected token {token}");
@@ -254,14 +253,9 @@ public class VmCompiler
         _functions.Add(methodName, parameters);
     }
 
-    private static bool CanLoadVariable(TokenType nextToken, TokenType previousToken)
+    private static bool CanLoadVariable(TokenType nextToken)
     {
-        return nextToken is not TokenType.EqualsSign and not TokenType.ElemOf && previousToken is not TokenType.ElemOf;
-    }
-
-    private static bool CanLoadNumber(TokenType nextToken)
-    {
-        return nextToken is not TokenType.ElemOf;
+        return nextToken is not TokenType.EqualsSign;
     }
 
     private void CompileSetElem()
@@ -280,43 +274,14 @@ public class VmCompiler
 
     private void CompileElemOf()
     {
-        Token a = _tokens[_i - 1];
-        Token b = _tokens[_i + 1];
-
-        if (a.TokenType == TokenType.Number) _image.WriteNextOperation(InstructionName.PushConstant, a.Value);
-        else _image.LoadVariable(a.Text);
-
-        _image.LoadVariable(b.Text);
+        // Token a = _tokens[_i - 1];
+        // Token b = _tokens[_i + 1];
+        //
+        // if (a.TokenType == TokenType.Number) _image.WriteNextOperation(InstructionName.PushConstant, a.Value);
+        // else _image.LoadVariable(a.Text);
+        //
+        // _image.LoadVariable(b.Text);
         _image.WriteNextOperation(InstructionName.ElemOf);
-        _i++;
-    }
-
-    private void CompilePtrSet()
-    {
-        int index = _i - 1;
-        _i++; // '->'
-        CompileNextBlock(TokenType.NewLine);
-        _image.LoadVariable(_tokens[index].Text);
-        _image.WriteNextOperation(InstructionName.SetToPtr);
-    }
-
-    private void CompilePtr()
-    {
-        _i++;
-        int index = _i;
-        int id =
-            (_image.Variables.FindLast(x => x.Name == _tokens[index].Text) ?? throw new InvalidOperationException()).Id;
-        if (id == 0) throw new InvalidOperationException($"Variable {_tokens[index].Text} was not found");
-        _image.WriteNextOperation(InstructionName.PushConstant, id);
-        _image.WriteNextOperation(InstructionName.GetPtr);
-    }
-
-    private void PushByPtr()
-    {
-        _i++;
-        int index = _i;
-        _image.LoadVariable(_tokens[index].Text);
-        _image.WriteNextOperation(InstructionName.PushByPtr);
     }
 
     private void CompileElse()

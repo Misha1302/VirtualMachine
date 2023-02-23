@@ -21,6 +21,30 @@ public static class Library
         Console.Write(VmRuntime.ObjectToString(obj));
     }
 
+    public static void LenOf(VmRuntime vmRuntime)
+    {
+        object? obj = vmRuntime.Memory.Pop();
+        decimal dec = obj switch
+        {
+            string s => s.Length,
+            VmList list => list.Len,
+            _ => throw new InvalidOperationException(
+                $"Unable to find length from object {VmRuntime.ObjectToString(obj)}")
+        };
+        
+        vmRuntime.Memory.Push(dec);
+    }
+
+    public static void MaxNumber(VmRuntime vmRuntime)
+    {
+        vmRuntime.Memory.Push(decimal.MaxValue);
+    }
+
+    public static void MinNumber(VmRuntime vmRuntime)
+    {
+        vmRuntime.Memory.Push(decimal.MinValue);
+    }
+
     public static void ValueToString(VmRuntime vmRuntime)
     {
         object? obj = vmRuntime.Memory.Pop();
@@ -72,7 +96,7 @@ public static class Library
         object memoryARegister = vmRuntime.Memory.Pop() ?? throw new NullReferenceException();
 
         decimal value = memoryARegister is string s
-            ? Convert.ToDecimal(s.Replace('.', ','))
+            ? Convert.ToDecimal(s.Replace('.', ',').Replace("_", ""))
             : Convert.ToDecimal(memoryARegister);
 
         vmRuntime.Memory.Push(value);

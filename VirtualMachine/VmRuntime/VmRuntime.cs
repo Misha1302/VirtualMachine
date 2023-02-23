@@ -145,13 +145,14 @@ public partial class VmRuntime
         StringBuilder outputStringBuilder = new();
 
         outputStringBuilder.Append("Stack={ ");
-        outputStringBuilder.Append(string.Join(",", Memory.GetStack().ToArray().Select(x => x switch
-        {
-            string s => $"\"{s}\"",
-            char c => $"\'{c}\'",
-            decimal m => m.ToString(CultureInfo.InvariantCulture).Replace(',', '.'),
-            _ => x?.ToString()
-        })));
+        outputStringBuilder.Append(string.Join(",", Memory.GetStack().ToArray()[..Memory.CurrentFunctionFrame.Sp]
+            .ToArray().Select(x => x switch
+            {
+                string s => $"\"{s}\"",
+                char c => $"\'{c}\'",
+                decimal m => m.ToString(CultureInfo.InvariantCulture).Replace(',', '.'),
+                _ => x?.ToString()
+            })));
         outputStringBuilder.AppendLine("}");
 
 
@@ -168,6 +169,12 @@ public partial class VmRuntime
 
             return x.Name + "=" + obj;
         })));
+        outputStringBuilder.AppendLine("}");
+
+
+        outputStringBuilder.Append("StackTrace={");
+        outputStringBuilder.Append(string.Join("->", Memory.FunctionFrames.Select(x =>
+            ((FunctionFrame)(x ?? throw new ArgumentNullException(nameof(x)))).FuncName)));
         outputStringBuilder.AppendLine("}");
 
         return outputStringBuilder.ToString();

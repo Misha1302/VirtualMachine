@@ -19,11 +19,22 @@ public class Parser
         DetectMethods(tokens);
         DetectFunctions(tokens);
         DetectVariables(tokens);
+        PrepareElemOfAndSetElem(tokens);
         SetPartOfExpression(tokens);
         PrecompileExpressions(tokens);
 
         assemblyManager = _assemblyManager;
         return tokens;
+    }
+
+    private void PrepareElemOfAndSetElem(List<Token> tokens)
+    {
+        for (int i = 0; i < tokens.Count - 1; i++)
+            if (tokens[i].TokenType is TokenType.ElemOf or TokenType.SetElem)
+            {
+                (tokens[i], tokens[i + 1]) = (tokens[i + 1], tokens[i]);
+                i++;
+            }
     }
 
     private static void PrecompileExpressions(List<Token> tokens)
@@ -145,7 +156,7 @@ public class Parser
 
     private static bool IsCorrectName(IReadOnlyList<Token> tokens, int i)
     {
-        return Regex.IsMatch(tokens[i].Text, "[_a-zA-Z0-9]+");
+        return Regex.IsMatch(tokens[i].Text, "[_a-zA-Z][_a-zA-Z0-9]*");
     }
 
     private static void DetectFunctions(IReadOnlyList<Token> tokens)
@@ -220,7 +231,8 @@ public class Parser
             { TokenType.GreatThan, 0 },
 
             { TokenType.ForeignMethod, 10 },
-            { TokenType.Function, 10 }
+            { TokenType.Function, 10 },
+            { TokenType.ElemOf, 11 }
         };
 
         public IEnumerable<Token> Convert(IReadOnlyList<Token> list)

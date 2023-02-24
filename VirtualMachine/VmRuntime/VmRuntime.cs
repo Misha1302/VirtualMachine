@@ -114,7 +114,6 @@ public partial class VmRuntime
                 InstructionName.Jump => Jump,
                 InstructionName.CreateVariable => CreateVariable,
                 InstructionName.PushConstant => PushConstant,
-                InstructionName.DeleteVariable => DeleteVariable,
                 InstructionName.NoOperation => NoOperation,
                 InstructionName.ElemOf => ElemOf,
                 InstructionName.SetElem => SetElem,
@@ -157,14 +156,14 @@ public partial class VmRuntime
 
 
         outputStringBuilder.Append("Variables={");
-        outputStringBuilder.Append(string.Join(",", Memory.GetAllVariables().Select(x =>
+        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.Variables.Select(x =>
         {
-            string obj = x.Value switch
+            string obj = x.VariableValue switch
             {
                 string s => $"\"{s}\"",
                 char c => $"\'{c}\'",
                 decimal m => m.ToString(CultureInfo.InvariantCulture).Replace(',', '.'),
-                _ => x.Value?.ToString()
+                _ => x.VariableValue?.ToString()
             } ?? string.Empty;
 
             return x.Name + "=" + obj;

@@ -1,10 +1,7 @@
 ﻿namespace ConsoleProgram;
 
-public static class Constants
+public static class VmConstants
 {
-    public const string MainLibraryPath =
-        @"D:\DRIVE\Programming\ProgrammingLanguages\Sharp\VirtualMachine\Git\Interpreter\MainLibrary\bin\Debug\net7.0\MainLibrary.dll";
-
-    public const string MathLibraryPath =
-        @"D:\DRIVE\Programming\ProgrammingLanguages\Sharp\VirtualMachine\Git\Interpreter\MathLibrary\bin\Debug\net7.0\MathLibrary.dll";
+    public const string MainLibraryPath = @"C:\VirtualMachine\Libs\MainLibrary\MainLibrary.dll";
+    public const string MathLibraryPath = @"C:\VirtualMachine\Libs\MathLibrary\MathLibrary.dll";
 }

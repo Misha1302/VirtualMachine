@@ -1,6 +1,5 @@
 ﻿namespace VirtualMachine;
 
-using System.Diagnostics;
 using global::VirtualMachine.Variables;
 using global::VirtualMachine.VmRuntime;
 
@@ -9,8 +8,9 @@ public record VmMemory
     private const int RecursionSize = 0xFFFF;
 
     private readonly object?[] _params = new object?[32];
+    private readonly Stack<int> _recursionStack = new(RecursionSize);
+
     public readonly VmList<FunctionFrame> FunctionFrames = new();
-    public readonly Stack<int> RecursionStack = new(RecursionSize);
     public Dictionary<int, object?> Constants = new(64);
     public FunctionFrame CurrentFunctionFrame;
     public InstructionName[] InstructionsArray = Array.Empty<InstructionName>();
@@ -51,26 +51,20 @@ public record VmMemory
         CurrentFunctionFrame.Variables.Add(vmVariable);
     }
 
-    public List<VmVariable> GetAllVariables()
-    {
-        return CurrentFunctionFrame.Variables;
-    }
-
     public VmVariable FindVariableById(int id)
     {
-        VmVariable? var = CurrentFunctionFrame.Variables.FindLast(x => x.Id == id);
-        if (var is null) throw new Exception("Variable not found");
-        return var;
-    }
+        for (int i = CurrentFunctionFrame.Variables.Count - 1; i >= 0; i--)
+        {
+            VmVariable findVariableById = CurrentFunctionFrame.Variables[i];
+            if (findVariableById.Id == id) return findVariableById;
+        }
 
-    public void DeleteVariable(int varId)
-    {
-        CurrentFunctionFrame.Variables.RemoveAt(CurrentFunctionFrame.Variables.FindLastIndex(x => x.Id == varId));
+        throw new InvalidOperationException();
     }
 
     public void OnCallingFunction(string funcName, int paramsCount)
     {
-        RecursionStack.Push(Ip + 2);
+        _recursionStack.Push(Ip + 2);
         FunctionFrames.AddToEnd(new FunctionFrame(funcName));
 
         for (int i = 0; i < paramsCount; i++) _params[i] = Pop();
@@ -81,7 +75,7 @@ public record VmMemory
 
     public void OnFunctionExit()
     {
-        Ip = RecursionStack.Pop();
+        Ip = _recursionStack.Pop();
 
         object? returnObject = CurrentFunctionFrame.Sp != 0 ? Pop() : null;
 
@@ -89,5 +83,10 @@ public record VmMemory
         CurrentFunctionFrame = FunctionFrames.GetEnd();
 
         Push(returnObject);
+    }
+
+    public void Drop()
+    {
+        CurrentFunctionFrame.Sp--;
     }
 }

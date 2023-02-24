@@ -10,7 +10,8 @@ public class ParserTests
     public void Test0()
     {
         Parser parser = new();
-        List<TokenType> tokens = parser.Tokenize("2 + 2 / 3", Constants.MainLibraryPath, out _).Select(x => x.TokenType)
+        List<TokenType> tokens = parser.Tokenize("2 + 2 / 3", VmConstants.MainLibraryPath, out _)
+            .Select(x => x.TokenType)
             .ToList();
 
         Assert.That(tokens, Is.EqualTo(new List<TokenType>
@@ -32,7 +33,7 @@ public class ParserTests
         List<TokenType> tokens = parser
             .Tokenize(
                 "var a = 2\nvar b = 3\n(a + b / 5 * (2 * 2.111 * (9.3 - 6.34))) / (2 + 9.32) + 3.45 / 4 - 45.3222",
-                Constants.MainLibraryPath, out _).Select(x => x.TokenType).ToList();
+                VmConstants.MainLibraryPath, out _).Select(x => x.TokenType).ToList();
 
         Assert.That(tokens, Is.EqualTo(new List<TokenType>
             {
@@ -89,7 +90,7 @@ func IsPrime(var q)
 
     return 1
 end
-""", Constants.MainLibraryPath, out _).Select(x => x.TokenType).ToList();
+""", VmConstants.MainLibraryPath, out _).Select(x => x.TokenType).ToList();
 
 
         Assert.That(tokens, Is.EqualTo(new List<TokenType>

@@ -3,19 +3,15 @@ using Tokenizer.Parser;
 using Tokenizer.Token;
 using VirtualMachine;
 
-
 const string code = """
-Main()
+# Main(StringToNumber(Input()), StringToNumber(Input()))
+Main(0, 300_000)
 
-func Main()
+func Main(var start, var upper)
     var arrayOfPrimeNumbers = []
 
-    Print('start: ')
-    var start = StringToNumber(Input())
-    Print('upper: ')
-    var upper = StringToNumber(Input())
-
     var n = 0
+    
     loop var i = start, i < upper, i = i + 1
         var isPrime = IsPrime(i)
 
@@ -26,17 +22,16 @@ func Main()
     end
 
     if LenOf(arrayOfPrimeNumbers) == 0
-        PrintLn('prime numbers was not found')
+        
         return 0
     end
 
     var minDelta = MaxNumber()
     var maxDelta = MinNumber()
 
-    Print('all prime numbers in the given range: ')
-    Print(0 elemOf arrayOfPrimeNumbers + ',')
+    
     loop var i = 1, i < LenOf(arrayOfPrimeNumbers), i = i + 1
-        Print(i elemOf arrayOfPrimeNumbers + ',')
+        
 
         var delta = (i elemOf arrayOfPrimeNumbers) - ((i - 1) elemOf arrayOfPrimeNumbers)
         if delta > maxDelta
@@ -47,10 +42,12 @@ func Main()
             minDelta = delta
         end
     end
-    Print('\b \n')
+    
 
-    PrintLn('min delta - ' + minDelta)
-    PrintLn('max delta - ' +maxDelta)
+    PrintLn(minDelta)
+    PrintLn(maxDelta)
+    
+    
 end
 
 
@@ -81,11 +78,12 @@ end
 """;
 
 Parser parser = new();
-List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out AssemblyManager assemblyManager);
+List<Token> tokens = parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
 VmCompiler.VmCompiler compiler = new(assemblyManager);
 VmImage vmImage = compiler.Compile(tokens);
 
 VirtualMachine.VirtualMachine.RunAndWait(vmImage);
+
 #if !DEBUG
 Console.Read();
 #endif

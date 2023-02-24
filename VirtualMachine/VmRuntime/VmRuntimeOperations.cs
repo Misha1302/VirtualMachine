@@ -1,6 +1,8 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
 using System.Data;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using global::VirtualMachine.Variables;
 
@@ -168,21 +170,18 @@ public partial class VmRuntime
 
     private void SetVariable()
     {
-        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out int varId))
-            throw new InvalidOperationException($"variable with id {Memory.Ip} was not found");
-
-        VmVariable vmVariable = Memory.FindVariableById(varId);
-        vmVariable.ChangeValue(Memory.Pop());
+        GetVmVariable().ChangeValue(Memory.Pop());
     }
-
 
     private void LoadVariable()
     {
-        if (!_pointersToInsertVariables.TryGetValue(Memory.Ip, out int varId))
-            throw new InvalidOperationException($"variable with id {Memory.Ip} was not found");
+        Memory.Push(GetVmVariable().VariableValue);
+    }
 
-        VmVariable vmVariable = Memory.FindVariableById(varId);
-        Memory.Push(vmVariable.Value);
+    private VmVariable GetVmVariable()
+    {
+        int varId = CollectionsMarshal.GetValueRefOrNullRef(_pointersToInsertVariables, Memory.Ip);
+        return Memory.FindVariableById(varId);
     }
 
 
@@ -218,6 +217,7 @@ public partial class VmRuntime
     {
         int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
+
         switch (obj)
         {
             case decimal d when d.IsEquals(0):
@@ -271,8 +271,16 @@ public partial class VmRuntime
 
     private void CreateVariable()
     {
-        VmVariable var = (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
-        if (Memory.GetAllVariables().FindIndex(x => x.Id == var.Id) == -1) Memory.CreateVariable(var);
+        VmVariable variable = (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
+        int variableId = variable.Id;
+
+        // ReSharper disable once ForCanBeConvertedToForeach
+        // ReSharper disable once LoopCanBeConvertedToQuery
+        for (int index = 0; index < Memory.CurrentFunctionFrame.Variables.Count; index++)
+            if (Memory.CurrentFunctionFrame.Variables[index].Id == variableId)
+                return;
+
+        Memory.CreateVariable(variable);
     }
 
 
@@ -289,13 +297,7 @@ public partial class VmRuntime
     }
 
 
-    private void DeleteVariable()
-    {
-        int varId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
-        Memory.DeleteVariable(varId);
-    }
-
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void NoOperation()
     {
         // no operation
@@ -310,10 +312,9 @@ public partial class VmRuntime
         Memory.Push(value);
     }
 
-
     private void Drop()
     {
-        _ = Memory.Pop();
+        Memory.Drop();
     }
 
     private void SetElem()

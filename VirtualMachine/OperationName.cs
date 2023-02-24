@@ -25,7 +25,6 @@ public enum InstructionName : byte
     PushAddress,
     CreateVariable,
     PushConstant,
-    DeleteVariable,
     NoOperation,
     ElemOf,
     GreatThan,

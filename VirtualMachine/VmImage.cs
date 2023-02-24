@@ -10,18 +10,15 @@ public class VmImage
     private readonly Dictionary<string, int> _labels;
     private readonly VmMemory _memory;
     private readonly Dictionary<int, int> _pointersToInsertVariables;
+    private readonly List<VmVariable> _variables;
     public readonly AssemblyManager AssemblyManager;
-    public readonly List<VmVariable> Variables;
 
     private int _ip;
-
-    private string _labelName = "label0";
-    private string _varName = "var0";
 
     public VmImage(AssemblyManager? assemblyManager = null)
     {
         AssemblyManager = new AssemblyManager();
-        Variables = new List<VmVariable>();
+        _variables = new List<VmVariable>();
         _pointersToInsertVariables = new Dictionary<int, int>();
         _labels = new Dictionary<string, int>();
         _goto = new List<(string, int)>();
@@ -113,22 +110,22 @@ public class VmImage
     {
         VmVariable var = new(varName);
         WriteNextOperation(InstructionName.CreateVariable, var);
-        Variables.Add(var);
+        _variables.Add(var);
     }
 
     public void SetVariable(string varName)
     {
-        WriteNextOperation(InstructionName.SetVariable);
+        WriteNextOperation(InstructionName.SetVariable, varName);
 
-        VmVariable keyValuePair = Variables.First(x => x.Name == varName);
+        VmVariable keyValuePair = _variables.First(x => x.Name == varName);
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
     public void LoadVariable(string varName)
     {
-        WriteNextOperation(InstructionName.LoadVariable);
+        WriteNextOperation(InstructionName.LoadVariable, varName);
 
-        VmVariable keyValuePair = Variables.First(x => x.Name == varName);
+        VmVariable keyValuePair = _variables.First(x => x.Name == varName);
         _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
     }
 
@@ -157,13 +154,12 @@ public class VmImage
     }
 
 
-    public void CreateFunction(string name, string[] parameters, Action body)
+    public void CreateFunction(string name, IEnumerable<string> parameters, Action body)
     {
         WriteNextOperation(InstructionName.Halt);
 
         SetLabel(name);
 
-        parameters = parameters.Reverse().ToArray();
         foreach (string parameter in parameters)
         {
             CreateVariable(parameter);
@@ -172,91 +168,13 @@ public class VmImage
 
         body();
 
-        foreach (string parameter in parameters)
-            DeleteVariable(parameter);
-
         WriteNextOperation(InstructionName.Ret);
     }
 
     public void Call(string funcName, int paramsCount)
     {
-        // 1. push return address
-        // 2. goto to label
         WriteNextOperation(InstructionName.PushAddress, funcName, paramsCount);
         Goto(funcName, InstructionName.Jump);
-    }
-
-    public void DeleteVariable(string varName)
-    {
-        int varId = (Variables.FindLast(x => x.Name == varName) ?? throw new InvalidOperationException()).Id;
-        WriteNextOperation(InstructionName.DeleteVariable, varId);
-    }
-
-    public void ForLoop(Action start, Action condition, Action end, Action body)
-    {
-        string loopLabel = GetNextLabelName();
-        string endOfLoopLabel = GetNextLabelName();
-
-        start();
-        SetLabel(loopLabel);
-        condition();
-        Goto(endOfLoopLabel, InstructionName.JumpIfZero);
-        body();
-        end();
-        Goto(loopLabel, InstructionName.Jump);
-        SetLabel(endOfLoopLabel);
-    }
-
-    public void Repeat(Action start, Action<string> body, Action upperBound)
-    {
-        string varName = GenerateNextVarName();
-
-        ForLoop(
-            () =>
-            {
-                // i = 0
-                CreateVariable(varName);
-                start();
-                SetVariable(varName);
-            },
-            () =>
-            {
-                // i < count
-                LoadVariable(varName);
-                upperBound();
-                WriteNextOperation(InstructionName.LessThan);
-            },
-            () =>
-            {
-                // i++
-                LoadVariable(varName);
-                WriteNextOperation(InstructionName.PushConstant, 1);
-                WriteNextOperation(InstructionName.Add);
-                SetVariable(varName);
-            },
-            () => { body(varName); }
-        );
-    }
-
-    private string GenerateNextVarName()
-    {
-        return GenerateName(ref _varName);
-    }
-
-    private string GetNextLabelName()
-    {
-        return GenerateName(ref _labelName);
-    }
-
-    private static string GenerateName(ref string name)
-    {
-        int number = Convert.ToInt32(name[^1].ToString());
-        int next = number + 1;
-
-        if (next == 10) name += '0';
-        else name = name[..^1] + next;
-
-        return name;
     }
 
     public void CallForeignMethod(string name)

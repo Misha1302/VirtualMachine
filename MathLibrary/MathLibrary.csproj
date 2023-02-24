@@ -10,4 +10,9 @@
         <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj"/>
     </ItemGroup>
 
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <Exec Command="If Not Exist &quot;C:\VirtualMachine\Libs\MathLibrary&quot; mkdir &quot;C:\VirtualMachine\Libs\MathLibrary&quot;"/>
+        <Exec Command="copy &quot;bin\Release\net7.0\*.*&quot; &quot;C:\VirtualMachine\Libs\MathLibrary&quot;"/>
+    </Target>
+
 </Project>

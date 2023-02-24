@@ -20,7 +20,7 @@ a
 
 
         Parser parser = new();
-        List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out AssemblyManager assemblyManager);
+        List<Token> tokens = parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
@@ -43,7 +43,7 @@ var b = 3
 
 
         Parser parser = new();
-        List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out AssemblyManager assemblyManager);
+        List<Token> tokens = parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
@@ -70,13 +70,13 @@ var b = 3
     public void Test2()
     {
         const string code = $@"
-import @'{Constants.MathLibraryPath}' *
+import @'{VmConstants.MathLibraryPath}' *
 Sqrt(2)
 ";
 
 
         Parser parser = new();
-        List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out AssemblyManager assemblyManager);
+        List<Token> tokens = parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
@@ -103,7 +103,7 @@ end
 
 
         Parser parser = new();
-        List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out AssemblyManager assemblyManager);
+        List<Token> tokens = parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
@@ -130,7 +130,7 @@ end
 
 
         Parser parser = new();
-        List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out AssemblyManager assemblyManager);
+        List<Token> tokens = parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
@@ -188,7 +188,7 @@ end
 
 
         Parser parser = new();
-        List<Token> tokens = parser.Tokenize(code, Constants.MainLibraryPath, out AssemblyManager assemblyManager);
+        List<Token> tokens = parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 

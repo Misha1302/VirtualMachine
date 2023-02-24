@@ -133,7 +133,7 @@ public static class Lexer
 
         TokenType tokenType = _list[^1].TokenType;
         return tokenType is TokenType.WhiteSpace or TokenType.NewLine or TokenType.OpenParentheses
-            or TokenType.CloseParentheses or TokenType.Comma || Parser.IsOperator(tokenType);
+            or TokenType.CloseParentheses or TokenType.Comma || Parser.IsDoubleOperator(tokenType);
     }
 
     private static Token ReturnWordOrSymbol(KeyValuePair<string, TokenType> pair)

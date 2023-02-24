@@ -21,7 +21,11 @@ public class AssemblyManager
         Justification = "<Pending>")]
     public void ImportMethodFromAssembly(string dllPath, string methodName)
     {
-        Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(dllPath));
+        string assemblyFile = Path.GetFullPath(dllPath);
+        if (!File.Exists(assemblyFile)) assemblyFile = @"C:\VirtualMachine\Libs\" + dllPath;
+        if (!File.Exists(assemblyFile)) throw new InvalidOperationException($"library {dllPath} was not found");
+        
+        Assembly assembly = Assembly.LoadFrom(assemblyFile);
         Type? @class = assembly.GetType("Library.Library");
         if (@class is null) throw new Exception("Class 'Library' in namespace 'Library' was not found");
 

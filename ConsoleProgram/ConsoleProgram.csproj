@@ -18,9 +18,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj"/>
-        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj"/>
-        <ProjectReference Include="..\VmCompiler\VmCompiler.csproj"/>
+        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj" />
+        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj" />
+        <ProjectReference Include="..\VmCompiler\VmCompiler.csproj" />
     </ItemGroup>
 
 </Project>

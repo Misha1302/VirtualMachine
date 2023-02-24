@@ -146,13 +146,6 @@ public class VmImage
         return _pointersToInsertVariables;
     }
 
-    public void ImportMethodFromAssembly(string dllPath, string methodName)
-    {
-        if (AssemblyManager.ImportedMethods.ContainsKey(methodName)) return;
-
-        AssemblyManager.ImportMethodFromAssembly(dllPath, methodName);
-    }
-
 
     public void CreateFunction(string name, IEnumerable<string> parameters, Action body)
     {

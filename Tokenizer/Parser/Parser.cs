@@ -99,9 +99,14 @@ public class Parser
     private static void SetPartOfExpression(IReadOnlyList<Token> tokens)
     {
         for (int i = 0; i < tokens.Count; i++)
-            if (IsOperator(tokens[i].TokenType))
+            if (IsDoubleOperator(tokens[i].TokenType))
             {
                 MarkPreviousBlock(tokens, i - 1);
+                MarkNextBlock(tokens, i + 1);
+                tokens[i].IsPartOfExpression = true;
+            }
+            else if (IsSingleOperator(tokens[i].TokenType))
+            {
                 MarkNextBlock(tokens, i + 1);
                 tokens[i].IsPartOfExpression = true;
             }
@@ -141,11 +146,15 @@ public class Parser
         } while (nesting != 0);
     }
 
-    public static bool IsOperator(TokenType x)
+    public static bool IsDoubleOperator(TokenType x)
     {
         return x is TokenType.Plus or TokenType.Minus or TokenType.Divide or TokenType.Multiply or TokenType.Modulo
-            or TokenType.LessThan or TokenType.GreatThan or TokenType.IsEquals or TokenType.IsNotEquals
-            or TokenType.IsNot;
+            or TokenType.LessThan or TokenType.GreatThan or TokenType.IsEquals or TokenType.IsNotEquals;
+    }
+
+    public static bool IsSingleOperator(TokenType x)
+    {
+        return x is TokenType.IsNot;
     }
 
     private static void DetectVariables(IReadOnlyList<Token> tokens)
@@ -216,7 +225,11 @@ public class Parser
 
     private void ImportAllMethodsFromLibrary(string libPath)
     {
-        Assembly assembly = Assembly.LoadFrom(libPath);
+        string assemblyFile = Path.GetFullPath(libPath);
+        if (!File.Exists(assemblyFile)) assemblyFile = @"C:\VirtualMachine\Libs\" + libPath;
+        if (!File.Exists(assemblyFile)) throw new InvalidOperationException($"library {libPath} was not found");
+        
+        Assembly assembly = Assembly.LoadFrom(assemblyFile);
         Type @class = assembly.GetType("Library.Library") ?? throw new InvalidOperationException();
         IEnumerable<MethodInfo> methods = @class.GetMethods()
             .Where(x =>
@@ -300,7 +313,7 @@ public class Parser
             foreach (List<Token> tokens in range)
             {
                 TokenType tokenType = tokens[0].TokenType;
-                if (!IsOperator(tokenType) &&
+                if (!IsDoubleOperator(tokenType) && !IsSingleOperator(tokenType) &&
                     tokenType is not TokenType.OpenParentheses and not TokenType.CloseParentheses)
                     result.Add(tokens);
                 else

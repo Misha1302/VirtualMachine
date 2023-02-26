@@ -1,7 +1,8 @@
-﻿namespace VirtualMachine.Variables;
-
-using System.Collections;
+﻿using System.Collections;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
+namespace VirtualMachine.Variables;
 
 public class VmList : IEnumerable<object?>, ICloneable
 {
@@ -53,16 +54,17 @@ public class VmList : IEnumerable<object?>, ICloneable
         _array[index] = obj;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public object? GetEnd()
     {
         return _array[_maxIndex];
     }
 
-    public object? GetElement(int index)
+    private object? GetElement(int index)
     {
         if (index > _maxIndex)
             throw new UnreachableException(
-                $"The element at index {index} does not exist. List length - {_maxIndex + 1}");
+                $"The element at index {index} does not exist. List length - {Len}");
 
         return _array[index];
     }
@@ -87,37 +89,54 @@ public class VmList<T> : IEnumerable<object?>, ICloneable
     private T[] _array;
     private int _maxIndex;
 
-    public VmList()
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public VmList(T[] array)
     {
-        _array = new T[32];
+        _array = array;
         _maxIndex = -1;
     }
 
-    public VmList(List<T> toList)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public VmList(int capacity)
     {
-        _array = toList.ToArray();
+        _array = new T[capacity];
         _maxIndex = -1;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public VmList() : this(32)
+    {
     }
 
     public int Len => _maxIndex + 1;
 
-    public object? this[int index] => GetElement(index);
+    public T this[int index] => GetElement(index);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public object Clone()
     {
-        return new VmList<T>(((T[])_array.Clone()).ToList());
+        return new VmList<T>((T[])_array.Clone());
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public IEnumerator<object?> GetEnumerator()
     {
         return _array[..Len].Cast<object?>().GetEnumerator();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public IEnumerable<T> GetEnumerable()
+    {
+        return _array[..Len];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public void SetElement(int index, T obj)
     {
         IncreaseIfItNeed(index);
@@ -125,6 +144,7 @@ public class VmList<T> : IEnumerable<object?>, ICloneable
         _maxIndex = index;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public void AddToEnd(T obj)
     {
         _maxIndex++;
@@ -132,20 +152,23 @@ public class VmList<T> : IEnumerable<object?>, ICloneable
         _array[_maxIndex] = obj;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public T GetEnd()
     {
         return _array[_maxIndex];
     }
 
-    public T GetElement(int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private T GetElement(int index)
     {
         if (index > _maxIndex)
             throw new UnreachableException(
-                $"The element at index {index} does not exist. List length - {_maxIndex + 1}");
+                $"The element at index {index} does not exist. List length - {Len}");
 
         return _array[index];
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private void IncreaseIfItNeed(int maxIndex)
     {
         int arrayLength = _array.Length;
@@ -155,6 +178,7 @@ public class VmList<T> : IEnumerable<object?>, ICloneable
         else Array.Resize(ref _array, arrayLength * 2);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     public void RemoveEnd()
     {
         _maxIndex--;

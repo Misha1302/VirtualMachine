@@ -1,11 +1,11 @@
-﻿namespace VirtualMachine.VmRuntime;
+﻿using VirtualMachine.Variables;
 
-using global::VirtualMachine.Variables;
+namespace VirtualMachine.VmRuntime;
 
-public record FunctionFrame(string FuncName)
+public record FunctionFrame
 {
-    public readonly string FuncName = FuncName;
-    public readonly object?[] Stack = new object?[0x80];
-    public readonly List<VmVariable> Variables = new(64);
-    public int Sp;
+    public readonly object?[] Stack = new object?[16];
+    public readonly VmList<VmVariable> Variables = new(16);
+    public string? FuncName;
+    public int Sp = 0;
 }

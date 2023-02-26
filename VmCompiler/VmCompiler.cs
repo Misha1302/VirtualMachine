@@ -1,8 +1,8 @@
-﻿namespace VmCompiler;
-
-using Tokenizer.Token;
+﻿using Tokenizer.Token;
 using VirtualMachine;
 using VirtualMachine.Variables;
+
+namespace VmCompiler;
 
 public class VmCompiler
 {

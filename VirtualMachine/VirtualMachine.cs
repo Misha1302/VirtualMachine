@@ -1,6 +1,6 @@
-﻿namespace VirtualMachine;
+﻿using System.Diagnostics;
 
-using System.Diagnostics;
+namespace VirtualMachine;
 
 public static class VirtualMachine
 {

@@ -3,7 +3,7 @@
 public record Token(TokenType TokenType, string Text, object? Value = null)
 {
     private static uint _number;
-    public readonly uint IndividualNumber = _number++;
+    public readonly uint Id = _number++;
 
     public readonly object? Value = Value;
 

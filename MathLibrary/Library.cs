@@ -1,9 +1,8 @@
-﻿// ReSharper disable once CheckNamespace
-
-namespace Library;
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using VirtualMachine.VmRuntime;
+
+// ReSharper disable once CheckNamespace
+namespace Library;
 
 public static class Library
 {

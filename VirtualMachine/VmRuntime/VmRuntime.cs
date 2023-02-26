@@ -1,10 +1,13 @@
-﻿namespace VirtualMachine.VmRuntime;
+﻿// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using global::VirtualMachine.Variables;
+using VirtualMachine.Variables;
+
+namespace VirtualMachine.VmRuntime;
 
 public partial class VmRuntime
 {
@@ -15,7 +18,6 @@ public partial class VmRuntime
     public VmMemory Memory;
 
     public Action<VmRuntime, Exception?>? OnProgramExit;
-    public Action<VmRuntime>? OnProgramStart;
 
     public VmRuntime()
     {
@@ -39,10 +41,10 @@ public partial class VmRuntime
         Execute(_instructions ?? throw new InvalidOperationException());
     }
 
-    private void Execute(IReadOnlyList<Instruction> instructions)
+    private void Execute(IReadOnlyList<Instruction> instructionsReadonlyList)
     {
 #if DEBUG
-        List<string> unused = instructions.Select(x => x.Method.Name).ToList();
+        List<string> unused = instructionsReadonlyList.Select(x => x.Method.Name).ToList();
         StringBuilder stringBuilder = new();
 
         for (int index = 0; index < unused.Count; index++)
@@ -62,9 +64,9 @@ public partial class VmRuntime
         try
 #endif
         {
-            OnProgramStart?.Invoke(this);
-            int instructionsCount = instructions.Count;
-            for (Memory.Ip = 0; Memory.Ip < instructionsCount; Memory.Ip++)
+            ReadOnlySpan<Instruction> instructions = new(instructionsReadonlyList.ToArray());
+            int instructionsLength = instructions.Length;
+            for (Memory.Ip = 0; Memory.Ip < instructionsLength; Memory.Ip++)
                 // Console.WriteLine(instructions[Memory.Ip].Method.Name);
                 instructions[Memory.Ip]();
         }
@@ -156,7 +158,7 @@ public partial class VmRuntime
 
 
         outputStringBuilder.Append("Variables={");
-        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.Variables.Select(x =>
+        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.Variables.GetEnumerable().Select(x =>
         {
             string obj = x.VariableValue switch
             {
@@ -172,8 +174,8 @@ public partial class VmRuntime
 
 
         outputStringBuilder.Append("StackTrace={");
-        outputStringBuilder.Append(string.Join("->", Memory.FunctionFrames.Select(x =>
-            ((FunctionFrame)(x ?? throw new ArgumentNullException(nameof(x)))).FuncName)));
+        outputStringBuilder.Append(string.Join("->", Memory.GetFunctionsFramesTrace().Select(x =>
+            (x ?? throw new ArgumentNullException(nameof(x))).FuncName)));
         outputStringBuilder.AppendLine("}");
 
         return outputStringBuilder.ToString();

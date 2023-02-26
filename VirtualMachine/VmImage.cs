@@ -1,6 +1,6 @@
-﻿namespace VirtualMachine;
+﻿using VirtualMachine.Variables;
 
-using global::VirtualMachine.Variables;
+namespace VirtualMachine;
 
 public class VmImage
 {

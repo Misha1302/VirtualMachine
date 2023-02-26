@@ -1,4 +1,4 @@
-﻿namespace ConsoleProgram;
+﻿namespace VmFacade;
 
 public static class VmConstants
 {

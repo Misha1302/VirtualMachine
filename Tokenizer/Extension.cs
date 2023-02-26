@@ -1,6 +1,6 @@
-﻿namespace Tokenizer;
+﻿using Tokenizer.Token;
 
-using Tokenizer.Token;
+namespace Tokenizer;
 
 public static class Extension
 {

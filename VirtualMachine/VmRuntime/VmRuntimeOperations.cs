@@ -1,10 +1,13 @@
-﻿namespace VirtualMachine.VmRuntime;
+﻿// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
 using System.Data;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using global::VirtualMachine.Variables;
+using VirtualMachine.Variables;
+
+namespace VirtualMachine.VmRuntime;
 
 public partial class VmRuntime
 {
@@ -178,6 +181,7 @@ public partial class VmRuntime
         Memory.Push(GetVmVariable().VariableValue);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private VmVariable GetVmVariable()
     {
         int varId = CollectionsMarshal.GetValueRefOrNullRef(_pointersToInsertVariables, Memory.Ip);
@@ -202,14 +206,20 @@ public partial class VmRuntime
 
     private void JumpIfNotZero()
     {
+        int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
         switch (obj)
         {
             case decimal d when !d.IsEquals(0):
             case true:
-                Memory.Ip = (int)(Memory.Pop() ?? throw new InvalidOperationException());
+                Jump(ip);
                 break;
         }
+    }
+
+    private void Jump(int ip)
+    {
+        Memory.Ip = ip;
     }
 
 
@@ -222,7 +232,7 @@ public partial class VmRuntime
         {
             case decimal d when d.IsEquals(0):
             case false:
-                Memory.Ip = ip;
+                Jump(ip);
                 break;
         }
     }
@@ -245,8 +255,10 @@ public partial class VmRuntime
     private void PushAddress()
     {
         object?[] constants = (object?[])(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
-        Memory.OnCallingFunction((string)(constants[0] ?? throw new InvalidOperationException()),
-            (int)(constants[1] ?? throw new InvalidOperationException()));
+
+        string funcName = (string)(constants[0] ?? throw new InvalidOperationException());
+        int paramsCount = (int)(constants[1] ?? throw new InvalidOperationException());
+        Memory.OnCallingFunction(funcName, paramsCount);
     }
 
 
@@ -264,8 +276,8 @@ public partial class VmRuntime
 
     private void Jump()
     {
-        object reg = Memory.Pop() ?? throw new InvalidOperationException();
-        Memory.Ip = reg is int i ? i : (int)(decimal)reg;
+        int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        Jump(ip);
     }
 
 
@@ -276,7 +288,7 @@ public partial class VmRuntime
 
         // ReSharper disable once ForCanBeConvertedToForeach
         // ReSharper disable once LoopCanBeConvertedToQuery
-        for (int index = 0; index < Memory.CurrentFunctionFrame.Variables.Count; index++)
+        for (int index = 0; index < Memory.CurrentFunctionFrame.Variables.Len; index++)
             if (Memory.CurrentFunctionFrame.Variables[index].Id == variableId)
                 return;
 

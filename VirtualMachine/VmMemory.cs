@@ -1,16 +1,20 @@
-﻿namespace VirtualMachine;
+﻿// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-using global::VirtualMachine.Variables;
-using global::VirtualMachine.VmRuntime;
+using VirtualMachine.Variables;
+using VirtualMachine.VmRuntime;
+
+namespace VirtualMachine;
 
 public record VmMemory
 {
     private const int RecursionSize = 0xFFFF;
+    private const string MainFuncName = "__main__";
 
+    private readonly FunctionsPool _functionsPool = new();
     private readonly object?[] _params = new object?[32];
     private readonly Stack<int> _recursionStack = new(RecursionSize);
 
-    public readonly VmList<FunctionFrame> FunctionFrames = new();
     public Dictionary<int, object?> Constants = new(64);
     public FunctionFrame CurrentFunctionFrame;
     public InstructionName[] InstructionsArray = Array.Empty<InstructionName>();
@@ -19,8 +23,7 @@ public record VmMemory
 
     public VmMemory()
     {
-        FunctionFrames.AddToEnd(new FunctionFrame("main"));
-        CurrentFunctionFrame = FunctionFrames.GetEnd();
+        CurrentFunctionFrame = _functionsPool.GetNewFunction(MainFuncName);
     }
 
     public Stack<object?> GetStack()
@@ -30,14 +33,12 @@ public record VmMemory
 
     public void Push(object? obj)
     {
-        int temp = CurrentFunctionFrame.Sp++;
-        CurrentFunctionFrame.Stack[temp] = obj;
+        CurrentFunctionFrame.Stack[CurrentFunctionFrame.Sp++] = obj;
     }
 
     public object? Pop()
     {
-        int temp = --CurrentFunctionFrame.Sp;
-        return CurrentFunctionFrame.Stack[temp];
+        return CurrentFunctionFrame.Stack[--CurrentFunctionFrame.Sp];
     }
 
     public object? Peek()
@@ -48,16 +49,16 @@ public record VmMemory
     public void CreateVariable(VmVariable vmVariable)
     {
         vmVariable.ChangeValue(null);
-        CurrentFunctionFrame.Variables.Add(vmVariable);
+        CurrentFunctionFrame.Variables.AddToEnd(vmVariable);
     }
 
     public VmVariable FindVariableById(int id)
     {
-        for (int i = CurrentFunctionFrame.Variables.Count - 1; i >= 0; i--)
-        {
-            VmVariable findVariableById = CurrentFunctionFrame.Variables[i];
-            if (findVariableById.Id == id) return findVariableById;
-        }
+        VmList<VmVariable> vmList = CurrentFunctionFrame.Variables;
+
+        for (int i = vmList.Len - 1; i >= 0; i--)
+            if (vmList[i].Id == id)
+                return vmList[i];
 
         throw new InvalidOperationException();
     }
@@ -65,12 +66,15 @@ public record VmMemory
     public void OnCallingFunction(string funcName, int paramsCount)
     {
         _recursionStack.Push(Ip + 2);
-        FunctionFrames.AddToEnd(new FunctionFrame(funcName));
 
         for (int i = 0; i < paramsCount; i++) _params[i] = Pop();
-
-        CurrentFunctionFrame = FunctionFrames.GetEnd();
+        CurrentFunctionFrame = _functionsPool.GetNewFunction(funcName);
         for (int i = 0; i < paramsCount; i++) Push(_params[i]);
+    }
+
+    private void ClearStack()
+    {
+        CurrentFunctionFrame.Sp = 0;
     }
 
     public void OnFunctionExit()
@@ -79,8 +83,8 @@ public record VmMemory
 
         object? returnObject = CurrentFunctionFrame.Sp != 0 ? Pop() : null;
 
-        FunctionFrames.RemoveEnd();
-        CurrentFunctionFrame = FunctionFrames.GetEnd();
+        _functionsPool.FreeFunction();
+        CurrentFunctionFrame = _functionsPool.GetTopOfTrace();
 
         Push(returnObject);
     }
@@ -88,5 +92,10 @@ public record VmMemory
     public void Drop()
     {
         CurrentFunctionFrame.Sp--;
+    }
+
+    public List<FunctionFrame> GetFunctionsFramesTrace()
+    {
+        return _functionsPool.GetTrace();
     }
 }

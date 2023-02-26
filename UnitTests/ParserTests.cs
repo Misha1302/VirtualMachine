@@ -1,16 +1,15 @@
-﻿namespace UnitTests;
-
-using ConsoleProgram;
-using Tokenizer.Parser;
+﻿using Tokenizer.Parser;
 using Tokenizer.Token;
+using VmFacade;
+
+namespace UnitTests;
 
 public class ParserTests
 {
     [Test]
     public void Test0()
     {
-        Parser parser = new();
-        List<TokenType> tokens = parser.Tokenize("2 + 2 / 3", VmConstants.MainLibraryPath, out _)
+        List<TokenType> tokens = Parser.Tokenize("2 + 2 / 3", VmConstants.MainLibraryPath, out _)
             .Select(x => x.TokenType)
             .ToList();
 
@@ -29,11 +28,9 @@ public class ParserTests
     [Test]
     public void Test1()
     {
-        Parser parser = new();
-        List<TokenType> tokens = parser
-            .Tokenize(
-                "var a = 2\nvar b = 3\n(a + b / 5 * (2 * 2.111 * (9.3 - 6.34))) / (2 + 9.32) + 3.45 / 4 - 45.3222",
-                VmConstants.MainLibraryPath, out _).Select(x => x.TokenType).ToList();
+        List<TokenType> tokens = Parser.Tokenize(
+            "var a = 2\nvar b = 3\n(a + b / 5 * (2 * 2.111 * (9.3 - 6.34))) / (2 + 9.32) + 3.45 / 4 - 45.3222",
+            VmConstants.MainLibraryPath, out _).Select(x => x.TokenType).ToList();
 
         Assert.That(tokens, Is.EqualTo(new List<TokenType>
             {
@@ -63,8 +60,7 @@ public class ParserTests
     [Test]
     public void Test2()
     {
-        Parser parser = new();
-        List<TokenType> tokens = parser.Tokenize(
+        List<TokenType> tokens = Parser.Tokenize(
             """
 func IsPrime(var q)
     if q < 2 

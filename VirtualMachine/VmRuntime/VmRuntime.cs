@@ -43,6 +43,14 @@ public partial class VmRuntime
 
     private void Execute(IReadOnlyList<Instruction> instructionsReadonlyList)
     {
+        void LogExtraInfo(ReadOnlySpan<Instruction> instructions)
+        {
+            Console.Write(instructions[Memory.Ip].Method.Name);
+            if (Memory.Constants.TryGetValue(Memory.Ip, out object? value)) Console.Write($" - {ObjectToString(value)}");
+            Console.WriteLine();
+        }
+        
+        
 #if DEBUG
         List<string> unused = instructionsReadonlyList.Select(x => x.Method.Name).ToList();
         StringBuilder stringBuilder = new();
@@ -67,8 +75,10 @@ public partial class VmRuntime
             ReadOnlySpan<Instruction> instructions = new(instructionsReadonlyList.ToArray());
             int instructionsLength = instructions.Length;
             for (Memory.Ip = 0; Memory.Ip < instructionsLength; Memory.Ip++)
-                // Console.WriteLine(instructions[Memory.Ip].Method.Name);
+            {
+                // LogExtraInfo(instructions);
                 instructions[Memory.Ip]();
+            }
         }
 #if !DEBUG
         catch (Exception ex)

@@ -1,8 +1,8 @@
-﻿using Tokenizer.Token;
+﻿namespace VmCompiler;
+
+using Tokenizer.Token;
 using VirtualMachine;
 using VirtualMachine.Variables;
-
-namespace VmCompiler;
 
 public class VmCompiler
 {
@@ -21,7 +21,6 @@ public class VmCompiler
     {
         _tokens = tokens;
         PrepareCode();
-        _i = 0;
         CompileNextBlock(TokenType.Eof);
 
         return _image;
@@ -32,6 +31,7 @@ public class VmCompiler
         for (_i = 0; _i < _tokens.Count; _i++)
             if (_tokens[_i].TokenType == TokenType.NewFunction)
                 PrepareNewFunction();
+        _i = 0;
     }
 
     private void CompileEqualsSign()
@@ -39,7 +39,7 @@ public class VmCompiler
         string varName = _tokens[_i - 1].Text;
 
         _i++;
-        CompileNextBlock(TokenType.NewLine | TokenType.Comma | TokenType.CloseParentheses);
+        CompileNextBlock(TokenType.NewLine | TokenType.Semicolon);
 
         _image.SetVariable(varName);
     }
@@ -47,10 +47,6 @@ public class VmCompiler
     private void CompileMethod()
     {
         Token methodToken = _tokens[_i];
-        _i += 2;
-        CompileNextBlock(TokenType.CloseParentheses);
-        _i++;
-
         _image.CallForeignMethod(methodToken.Text);
     }
 
@@ -61,18 +57,18 @@ public class VmCompiler
         string endOfLoopLabel = GetNextLabelName();
 
         _i += 2;
-        CompileNextBlock(TokenType.Comma);
+        CompileNextBlock(TokenType.Semicolon);
         _image.SetLabel(loopLabel);
         _i++;
-        CompileNextBlock(TokenType.Comma);
+        CompileNextBlock(TokenType.Semicolon);
         _image.Goto(endOfLoopLabel, InstructionName.JumpIfZero);
 
         int iCopy = _i;
-        PassTokensBeforeNext(TokenType.CloseParentheses | TokenType.NewLine);
+        PassTokensBeforeNext(TokenType.NewLine);
         CompileNextBlock(TokenType.End);
         int copy = _i;
         _i = iCopy;
-        CompileNextBlock(TokenType.CloseParentheses | TokenType.NewLine);
+        CompileNextBlock(TokenType.NewLine);
         _i = copy;
 
         _image.Goto(loopLabel, InstructionName.Jump);
@@ -92,7 +88,7 @@ public class VmCompiler
             if (contains) break;
 
             TokenType nextToken = _i + 1 != _tokens.Count ? _tokens[_i + 1].TokenType : default;
-
+            
             switch (_tokens[_i].TokenType)
             {
                 case TokenType.Variable when CanLoadVariable(nextToken):
@@ -163,7 +159,6 @@ public class VmCompiler
                     break;
                 case TokenType.ForeignMethod:
                     CompileMethod();
-                    _i--;
                     break;
                 case TokenType.NewFunction:
                     CompileNewFunction();
@@ -189,6 +184,7 @@ public class VmCompiler
                 case TokenType.Comma:
                 case TokenType.OpenParentheses:
                 case TokenType.CloseParentheses:
+                case TokenType.Semicolon:
                     break;
                 default:
                     Token token = _tokens[_i];
@@ -220,10 +216,6 @@ public class VmCompiler
     private void CompileCallFunction()
     {
         string methodName = _tokens[_i].Text;
-
-        _i += 2;
-        CompileNextBlock(TokenType.CloseParentheses);
-
         _image.Call(methodName, _functions[methodName].Count);
     }
 

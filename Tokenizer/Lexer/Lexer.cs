@@ -36,7 +36,8 @@ public static class Lexer
 
         { "=", TokenType.EqualsSign },
         { ",", TokenType.Comma },
-        { ".", TokenType.Dot }
+        { ".", TokenType.Dot },
+        { ";", TokenType.Semicolon }
     };
 
     private static readonly IReadOnlyDictionary<string, TokenType> _words = new Dictionary<string, TokenType>

@@ -8,24 +8,22 @@ public static class VmFacade
 {
     public static void Run(string code)
     {
-        List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-        VmCompiler.VmCompiler compiler = new(assemblyManager);
-        VmImage vmImage = compiler.Compile(tokens);
-
-        VirtualMachine.VirtualMachine.RunAndWait(vmImage);
+        VirtualMachine.VirtualMachine.RunAndWait(Compile(code));
     }
 
     public static void RunSeveralPrograms(IEnumerable<string> codes)
     {
-        foreach (string code in codes)
-        {
-            List<Token> tokens =
-                Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-            VmCompiler.VmCompiler compiler = new(assemblyManager);
-            VmImage vmImage = compiler.Compile(tokens);
-            VirtualMachine.VirtualMachine.Run(vmImage);
-        }
-
+        codes.Select(Compile).ToList()
+            .ForEach(VirtualMachine.VirtualMachine.Run);
+        
         VirtualMachine.VirtualMachine.WaitLast();
+    }
+
+    private static VmImage Compile(string code)
+    {
+        List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
+        VmCompiler.VmCompiler compiler = new(assemblyManager);
+        VmImage vmImage = compiler.Compile(tokens);
+        return vmImage;
     }
 }

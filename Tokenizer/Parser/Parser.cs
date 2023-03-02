@@ -1,20 +1,21 @@
-﻿using System.Reflection;
+﻿namespace Tokenizer.Parser;
+
+using System.Reflection;
 using System.Text.RegularExpressions;
+using Tokenizer.Lexer;
 using Tokenizer.Token;
 using VirtualMachine;
 using VirtualMachine.VmRuntime;
-
-namespace Tokenizer.Parser;
 
 public static class Parser
 {
     private static AssemblyManager _assemblyManager = new();
 
-    public static List<Token.Token> Tokenize(string code, string mainLibPath, out AssemblyManager assemblyManager)
+    public static List<Token> Tokenize(string code, string mainLibPath, out AssemblyManager assemblyManager)
     {
         _assemblyManager = new AssemblyManager();
 
-        List<Token.Token> tokens = Lexer.Lexer.Tokenize(code);
+        List<Token> tokens = Lexer.Tokenize(code);
         tokens = tokens.Where(x =>
             x.TokenType is not TokenType.WhiteSpace and not TokenType.Comment and not TokenType.AtSign).ToList();
 
@@ -24,6 +25,7 @@ public static class Parser
         DetectVariables(tokens);
 
         SetPartOfExpression(tokens);
+        ReplaceMethodsOrFunctionsCalls(ref tokens);
         PrepareElemOfAndSetElem(tokens);
         PrecompileExpressions(tokens);
 
@@ -31,7 +33,46 @@ public static class Parser
         return tokens;
     }
 
-    private static void PrepareElemOfAndSetElem(IList<Token.Token> tokens)
+    private static void ReplaceMethodsOrFunctionsCalls(ref List<Token> tokens)
+    {
+        for (int i = 0; i < tokens.Count; i++)
+            if (tokens[i].IsCallMethodOrFunc)
+            {
+                if (tokens[i].Marked) break;
+                tokens[i].Marked = true;
+                int startPosition = i;
+                int lvl = 0;
+                do
+                {
+                    i++;
+
+                    switchLabel:
+                    switch (tokens[i].TokenType)
+                    {
+                        case TokenType.CloseParentheses:
+                            lvl--;
+                            break;
+                        case TokenType.OpenParentheses:
+                            lvl++;
+                            break;
+                        case TokenType.ForeignMethod or TokenType.Function:
+                            if (tokens[i].Marked) break;
+                            List<Token> range = tokens.GetRange(i, tokens.Count - i);
+                            ReplaceMethodsOrFunctionsCalls(ref range);
+                            tokens.RemoveRange(i, tokens.Count - i);
+                            tokens.AddRange(range);
+                            goto switchLabel;
+                    }
+                } while (lvl != 0);
+
+                while (tokens[i].IsCallMethodOrFunc) i++;
+
+                tokens.Insert(i + 1, tokens[startPosition]);
+                tokens.RemoveAt(startPosition);
+            }
+    }
+
+    private static void PrepareElemOfAndSetElem(IList<Token> tokens)
     {
         for (int i = 0; i < tokens.Count - 1; i++)
         {
@@ -43,7 +84,7 @@ public static class Parser
                     i++;
                     break;
                 case TokenType.SetElem:
-                    Token.Token token = tokens[i];
+                    Token token = tokens[i];
                     tokens.RemoveAt(i);
                     while (tokens[i].TokenType != TokenType.NewLine) i++;
                     tokens.Insert(i, token);
@@ -52,12 +93,12 @@ public static class Parser
         }
     }
 
-    private static void PrecompileExpressions(List<Token.Token> tokens)
+    private static void PrecompileExpressions(List<Token> tokens)
     {
         ReversePolishNotation rpn = new();
 
         int left = 0;
-        List<Token.Token> nextList = tokens.GetRange(left, tokens.Count);
+        List<Token> nextList = tokens.GetRange(left, tokens.Count);
         tokens.RemoveRange(left, tokens.Count);
         int previousLeft = left;
         while (ProcessNextExpression(out int offset))
@@ -80,18 +121,18 @@ public static class Parser
             int startIndex = nextList.FindIndex(x => x.IsPartOfExpression);
             if (startIndex == -1) return false;
 
-            List<Token.Token> list = nextList.GetRange(startIndex + 1, nextList.Count - startIndex - 1);
+            List<Token> list = nextList.GetRange(startIndex + 1, nextList.Count - startIndex - 1);
             int i = 0;
             while (list[i].IsPartOfExpression) i++;
             int len = i + 1;
             if (len + startIndex > nextList.Count) return false;
 
-            List<Token.Token> range = nextList.GetRange(startIndex, len);
+            List<Token> range = nextList.GetRange(startIndex, len);
             nextList.RemoveRange(startIndex, len);
 
-            Token.Token token = nextList[startIndex];
+            Token token = nextList[startIndex];
 
-            IEnumerable<Token.Token> collection = rpn.Convert(range);
+            IEnumerable<Token> collection = rpn.Convert(range);
             nextList.InsertRange(startIndex, collection);
 
             lastIndex = nextList.FindIndex(x => x.Id == token.Id);
@@ -99,7 +140,7 @@ public static class Parser
         }
     }
 
-    private static void SetPartOfExpression(IReadOnlyList<Token.Token> tokens)
+    private static void SetPartOfExpression(IReadOnlyList<Token> tokens)
     {
         for (int i = 0; i < tokens.Count; i++)
             if (IsDoubleOperator(tokens[i].TokenType))
@@ -115,17 +156,17 @@ public static class Parser
             }
     }
 
-    private static void MarkPreviousBlock(IReadOnlyList<Token.Token> tokens, int i)
+    private static void MarkPreviousBlock(IReadOnlyList<Token> tokens, int i)
     {
         MarkBlock(tokens, i, 1, -1, -1);
     }
 
-    private static void MarkNextBlock(IReadOnlyList<Token.Token> tokens, int i)
+    private static void MarkNextBlock(IReadOnlyList<Token> tokens, int i)
     {
         MarkBlock(tokens, i, -1, 1, 1);
     }
 
-    private static void MarkBlock(IReadOnlyList<Token.Token> tokens, int i, int closeParenthesesValue,
+    private static void MarkBlock(IReadOnlyList<Token> tokens, int i, int closeParenthesesValue,
         int openParenthesesValue, int direction)
     {
         int nesting = 0;
@@ -152,7 +193,8 @@ public static class Parser
     public static bool IsDoubleOperator(TokenType x)
     {
         return x is TokenType.Plus or TokenType.Minus or TokenType.Divide or TokenType.Multiply or TokenType.Modulo
-            or TokenType.LessThan or TokenType.GreatThan or TokenType.IsEquals or TokenType.IsNotEquals;
+            or TokenType.LessThan or TokenType.GreatThan or TokenType.IsEquals or TokenType.IsNotEquals or TokenType.Or
+            or TokenType.And;
     }
 
     public static bool IsSingleOperator(TokenType x)
@@ -160,7 +202,7 @@ public static class Parser
         return x is TokenType.IsNot;
     }
 
-    private static void DetectVariables(IReadOnlyList<Token.Token> tokens)
+    private static void DetectVariables(IReadOnlyList<Token> tokens)
     {
         List<string?> variables = new();
         for (int i = 1; i < tokens.Count; i++)
@@ -178,12 +220,12 @@ public static class Parser
             }
     }
 
-    private static bool IsCorrectName(IReadOnlyList<Token.Token> tokens, int i)
+    private static bool IsCorrectName(IReadOnlyList<Token> tokens, int i)
     {
         return Regex.IsMatch(tokens[i].Text, "[_a-zA-Z][_a-zA-Z0-9]*");
     }
 
-    private static void DetectFunctions(IReadOnlyList<Token.Token> tokens)
+    private static void DetectFunctions(IReadOnlyList<Token> tokens)
     {
         List<string> functions = new();
         for (int i = 1; i < tokens.Count; i++)
@@ -194,12 +236,12 @@ public static class Parser
                     tokens[i].TokenType = TokenType.NewFunction;
                 }
 
-        foreach (Token.Token t in tokens)
+        foreach (Token t in tokens)
             if (functions.Contains(t.Text) && t.TokenType != TokenType.NewFunction)
                 t.TokenType = TokenType.Function;
     }
 
-    private static void ImportMethods(List<Token.Token> tokens, string mainLibPath)
+    private static void ImportMethods(List<Token> tokens, string mainLibPath)
     {
         ImportAllMethodsFromLibrary(mainLibPath);
 
@@ -246,12 +288,12 @@ public static class Parser
             _assemblyManager.ImportMethodFromAssembly(libPath, method.Name);
     }
 
-    private static void DetectMethods(IEnumerable<Token.Token> tokens)
+    private static void DetectMethods(IEnumerable<Token> tokens)
     {
-        IEnumerable<Token.Token> collection = tokens.Where(t =>
+        IEnumerable<Token> collection = tokens.Where(t =>
             t.TokenType == TokenType.Unknown && _assemblyManager.ImportedMethods.ContainsKey(t.Text));
 
-        foreach (Token.Token t in collection)
+        foreach (Token t in collection)
             t.TokenType = TokenType.ForeignMethod;
     }
 
@@ -267,86 +309,58 @@ public static class Parser
             { TokenType.Divide, 2 },
             { TokenType.Modulo, 3 },
 
-            { TokenType.IsNot, 2 },
-            { TokenType.And, 1 },
-            { TokenType.Or, 1 },
 
-            { TokenType.IsNotEquals, 0 },
-            { TokenType.IsEquals, 0 },
-            { TokenType.LessThan, 0 },
-            { TokenType.GreatThan, 0 },
-
-            { TokenType.ForeignMethod, 10 },
-            { TokenType.Function, 10 },
-            { TokenType.ElemOf, 11 }
+            { TokenType.ElemOf, 4 },
+            { TokenType.IsNot, 3 },
+            
+            { TokenType.LessThan, 2 },
+            { TokenType.GreatThan, 2 },
+            
+            { TokenType.IsNotEquals, 1 },
+            { TokenType.IsEquals, 1 },
+            
+            { TokenType.And, 0 },
+            { TokenType.Or, 0 }
         };
 
-        public IEnumerable<Token.Token> Convert(IReadOnlyList<Token.Token> list)
+        public IEnumerable<Token> Convert(IEnumerable<Token> list)
         {
-            List<List<Token.Token>> result = new();
-            Stack<List<Token.Token>> tokensStack = new();
+            List<Token> result = new();
+            Stack<Token> tokensStack = new();
 
-            List<List<Token.Token>> range = new();
-
-            for (int i = 0; i < list.Count; i++)
+            foreach (Token token in list)
             {
-                Token.Token x = list[i];
-                if (!x.IsCallMethodOrFunc)
-                {
-                    range.Add(new List<Token.Token> { x });
-                }
-                else
-                {
-                    List<Token.Token> retList = new();
-                    int lvl = 0;
-                    do
-                    {
-                        retList.Add(list[i]);
-                        i++;
-                        if (list[i].TokenType == TokenType.OpenParentheses) lvl++;
-                        if (list[i].TokenType == TokenType.CloseParentheses) lvl--;
-                    } while (lvl != 0);
-
-                    retList.Add(list[i]);
-                    range.Add(retList);
-                }
-            }
-
-
-            foreach (List<Token.Token> tokens in range)
-            {
-                TokenType tokenType = tokens[0].TokenType;
+                TokenType tokenType = token.TokenType;
                 if (!IsDoubleOperator(tokenType) && !IsSingleOperator(tokenType) &&
-                    tokenType is not TokenType.OpenParentheses and not TokenType.CloseParentheses)
-                    result.Add(tokens);
+                    tokenType is not TokenType.OpenParentheses and not TokenType.CloseParentheses) result.Add(token);
                 else
                     switch (tokenType)
                     {
                         case TokenType.OpenParentheses:
-                            tokensStack.Push(tokens);
+                            tokensStack.Push(token);
                             break;
                         case TokenType.CloseParentheses:
-                            Token.Token t = tokensStack.Pop()[0];
+                            Token t = tokensStack.Pop();
                             while (t.TokenType != TokenType.OpenParentheses)
                             {
-                                result.Add(new List<Token.Token> { t });
-                                t = tokensStack.Pop()[0];
+                                result.Add(t);
+                                t = tokensStack.Pop();
                             }
 
                             break;
                         default:
                             if (tokensStack.Count > 0)
-                                if (_priorities[tokens[0].TokenType] <= _priorities[tokensStack.Peek()[0].TokenType])
+                                if (_priorities[token.TokenType] <= _priorities[tokensStack.Peek().TokenType])
                                     result.Add(tokensStack.Pop());
 
-                            tokensStack.Push(tokens);
+                            tokensStack.Push(token);
                             break;
                     }
             }
 
             while (tokensStack.Count > 0) result.Add(tokensStack.Pop());
 
-            return result.SelectMany(x => x);
+            return result;
         }
     }
 }

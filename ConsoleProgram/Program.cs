@@ -1,18 +1,18 @@
 ﻿const string code = """
-import 'MathLibrary\MathLibrary.dll' *
-
-loop var i = 0, i < 3_000, i = i + 1
-    var q = isOdd(i, 0)
+loop var i = 0; i < 10; i = i + 1
+    PrintLn(i)
 end
+""";
 
-func isOdd(var n, var odd)
-    n = Abs(n)
+const string code0 = """
+PrintLn(fib(32))
 
-    if n == 0
-        return odd
+func fib(var n)
+    if n == 1 or n == 2
+        return 1
     end
 
-    return isOdd(n - 1, not odd)
+    return fib(n - 1) + fib(n - 2)
 end
 """;
 

@@ -1,13 +1,13 @@
 ﻿// This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
+namespace VirtualMachine.VmRuntime;
+
 using System.Data;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using VirtualMachine.Variables;
-
-namespace VirtualMachine.VmRuntime;
+using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
@@ -292,7 +292,7 @@ public partial class VmRuntime
             if (Memory.CurrentFunctionFrame.Variables[index].Id == variableId)
                 return;
 
-        Memory.CreateVariable(variable);
+        Memory.CreateVariable(new VmVariable(variable.Name));
     }
 
 

@@ -48,7 +48,6 @@ public record VmMemory
 
     public void CreateVariable(VmVariable vmVariable)
     {
-        vmVariable.ChangeValue(null);
         CurrentFunctionFrame.Variables.AddToEnd(vmVariable);
     }
 
@@ -72,20 +71,14 @@ public record VmMemory
         for (int i = 0; i < paramsCount; i++) Push(_params[i]);
     }
 
-    private void ClearStack()
-    {
-        CurrentFunctionFrame.Sp = 0;
-    }
-
     public void OnFunctionExit()
     {
         Ip = _recursionStack.Pop();
 
         object? returnObject = CurrentFunctionFrame.Sp != 0 ? Pop() : null;
 
-        _functionsPool.FreeFunction();
-        CurrentFunctionFrame = _functionsPool.GetTopOfTrace();
-
+        CurrentFunctionFrame = _functionsPool.FreeFunction();
+        
         Push(returnObject);
     }
 

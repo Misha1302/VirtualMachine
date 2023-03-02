@@ -169,7 +169,7 @@ func IsPrime(var q)
 
 
     var upper = q + 0.01
-    loop var i = 3, (i * i) < upper, i = i + 2
+    loop var i = 3; (i * i) < upper; i = i + 2
         if q % i == 0 
             return 0 
         end

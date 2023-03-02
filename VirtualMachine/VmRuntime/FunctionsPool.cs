@@ -21,14 +21,10 @@ public class FunctionsPool
         return functionFrame;
     }
 
-    public void FreeFunction()
+    public FunctionFrame FreeFunction()
     {
         _functionFramesTrace.RemoveAt(_functionFramesTrace.Count - 1);
         _pointer--;
-    }
-
-    public FunctionFrame GetTopOfTrace()
-    {
         return _functionFramesTrace[^1];
     }
 

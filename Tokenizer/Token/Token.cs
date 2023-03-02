@@ -11,4 +11,5 @@ public record Token(TokenType TokenType, string Text, object? Value = null)
     public string Text = Text;
     public TokenType TokenType = TokenType;
     public bool IsCallMethodOrFunc => TokenType is TokenType.ForeignMethod or TokenType.Function;
+    public bool Marked;
 }

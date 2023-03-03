@@ -80,7 +80,7 @@ public class VmImage
         Dictionary<int, object?> constants = _memory.Constants.ToDictionary(entry => entry.Key, entry => entry.Value);
         InstructionName[] memArray = (InstructionName[])_memory.InstructionsArray.Clone();
 
-        WriteNextOperation(InstructionName.End);
+        WriteNextOperation(InstructionName.EndOfProgram);
         _ip--;
         ReplaceGoto();
 

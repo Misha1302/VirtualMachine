@@ -1,21 +1,13 @@
-﻿const string code = """
-loop var i = 0; i < 100_000_000; i = i + 1
-    # PrintLn(i)
-end
-""";
+﻿using System.Globalization;
+using System.Text;
 
-const string code0 = """
-PrintLn(fib(32))
+int l = 5_000 * "PrintLn(1000 * 100)".Length;
+StringBuilder code = new(l);
+for (int i = 0; i < 5_000; i++)
+    code.AppendLine(
+        $"PrintLn({i.ToString(CultureInfo.InvariantCulture)} * {i.ToString(CultureInfo.InvariantCulture)})");
 
-func fib(var n)
-    if n < 2.001
-        return 1
-    end
-    return fib(n - 1) + fib(n - 2)
-end
-""";
-
-VmFacade.VmFacade.Run(code);
+VmFacade.VmFacade.Run(code.ToString());
 
 #if !DEBUG
 async void WaitAndExit(int timeMs)

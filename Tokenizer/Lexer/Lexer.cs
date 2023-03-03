@@ -1,8 +1,9 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
-using Tokenizer.Token;
+﻿namespace Tokenizer.Lexer;
 
-namespace Tokenizer.Lexer;
+using System.Text;
+using System.Text.RegularExpressions;
+using Tokenizer.Parser;
+using Tokenizer.Token;
 
 public static class Lexer
 {
@@ -40,6 +41,8 @@ public static class Lexer
         { ";", TokenType.Semicolon }
     };
 
+    private static readonly List<KeyValuePair<string, TokenType>> _sortedSymbols;
+
     private static readonly IReadOnlyDictionary<string, TokenType> _words = new Dictionary<string, TokenType>
     {
         { "end", TokenType.End },
@@ -67,17 +70,25 @@ public static class Lexer
         { "setElem", TokenType.SetElem }
     };
 
-    private static List<Token.Token> _list = new();
+    private static readonly List<KeyValuePair<string, TokenType>> _sortedWords;
 
-    public static List<Token.Token> Tokenize(string code)
+    private static List<Token> _list = new();
+
+    static Lexer()
     {
-        _list = new List<Token.Token>();
+        _sortedSymbols = _symbols.OrderBy(x => x.Key.Length).ToList();
+        _sortedWords = _words.OrderBy(x => x.Key.Length).ToList();
+    }
+
+    public static List<Token> Tokenize(string code)
+    {
+        _list = new List<Token>();
         _code = code + '\0';
         _position = 0;
 
         while (true)
         {
-            Token.Token nextToken = GetNextToken();
+            Token nextToken = GetNextToken();
             _list.Add(nextToken);
             if (nextToken.TokenType == TokenType.Eof) break;
         }
@@ -87,7 +98,7 @@ public static class Lexer
         return _list;
     }
 
-    private static void ConnectUnknowns(IList<Token.Token> tokens)
+    private static void ConnectUnknowns(IList<Token> tokens)
     {
         for (int i = 0; i < tokens.Count; i++)
             if (tokens[i].TokenType == TokenType.Unknown)
@@ -98,33 +109,33 @@ public static class Lexer
                 }
     }
 
-    private static Token.Token GetNextToken()
+    private static Token GetNextToken()
     {
-        string trimmedCode = _code[_position..];
-
         char c = _code[_position];
-        if (trimmedCode.StartsWith("\r\n")) return ReturnNewLine();
+        if (_code[_position] == '\n' && _code[_position + 1] == '\r') return ReturnNewLine();
         if (char.IsWhiteSpace(c)) return ReturnWhitespace(c);
         if (char.IsDigit(c) && PreviousTokenIsDelimiter()) return GetNumber();
 
-        Token.Token? token = c switch
+        Token? token = c switch
         {
-            EofCharacter => new Token.Token(TokenType.Eof, EofCharacter.ToString()),
+            EofCharacter => new Token(TokenType.Eof, EofCharacter.ToString()),
             StringCharacter => GetString(_list.Count == 0 || _list[^1].TokenType != TokenType.AtSign),
             SingleLineComment => GetComment(),
             _ => null
         };
         if (token != null) return token;
 
-        if (trimmedCode.StartsWithAny(_symbols, out KeyValuePair<string, TokenType> symbol))
+        string trimmedCode = _code[_position..];
+        if (trimmedCode.StartsWithAny(_sortedSymbols, out KeyValuePair<string, TokenType> symbol))
             return ReturnWordOrSymbol(symbol);
 
         bool canWord = PreviousTokenIsDelimiter();
-        if (canWord && trimmedCode.StartsWithAny(_words, out KeyValuePair<string, TokenType> word) &&
+        if (canWord && trimmedCode.StartsWithAny(_sortedWords, out KeyValuePair<string, TokenType> word) &&
             !Regex.IsMatch(_code[_position + word.Key.Length].ToString(), "[a-zA-Z_]"))
             return ReturnWordOrSymbol(word);
 
-        return new Token.Token(TokenType.Unknown, _code[_position++].ToString());
+
+        return new Token(TokenType.Unknown, _code[_position++].ToString());
     }
 
     private static bool PreviousTokenIsDelimiter()
@@ -133,22 +144,22 @@ public static class Lexer
 
         TokenType tokenType = _list[^1].TokenType;
         return tokenType is TokenType.WhiteSpace or TokenType.NewLine or TokenType.OpenParentheses
-            or TokenType.CloseParentheses or TokenType.Comma || Parser.Parser.IsDoubleOperator(tokenType);
+            or TokenType.CloseParentheses or TokenType.Comma || Parser.IsDoubleOperator(tokenType);
     }
 
-    private static Token.Token ReturnWordOrSymbol(KeyValuePair<string, TokenType> pair)
+    private static Token ReturnWordOrSymbol(KeyValuePair<string, TokenType> pair)
     {
         _position += pair.Key.Length;
-        return new Token.Token(pair.Value, pair.Key);
+        return new Token(pair.Value, pair.Key);
     }
 
-    private static Token.Token ReturnNewLine()
+    private static Token ReturnNewLine()
     {
         _position += 2;
-        return new Token.Token(TokenType.NewLine, "\r\n");
+        return new Token(TokenType.NewLine, "\r\n");
     }
 
-    private static Token.Token GetComment()
+    private static Token GetComment()
     {
         _position++;
         int startOfStringIndex = _position;
@@ -157,27 +168,27 @@ public static class Lexer
         string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length;
 
-        return new Token.Token(TokenType.Comment, str, str);
+        return new Token(TokenType.Comment, str, str);
     }
 
-    private static Token.Token ReturnWhitespace(char c)
+    private static Token ReturnWhitespace(char c)
     {
         _position++;
-        return new Token.Token(TokenType.WhiteSpace, c.ToString());
+        return new Token(TokenType.WhiteSpace, c.ToString());
     }
 
-    private static Token.Token GetNumber()
+    private static Token GetNumber()
     {
         StringBuilder numberString = new();
         char ch;
         _position--;
         while (char.IsDigit(ch = _code[++_position]) || ch is '.' or '_') numberString.Append(ch);
 
-        string str = numberString.ToString().Replace('.', ',').Replace("_", "");
-        return new Token.Token(TokenType.Number, str, decimal.Parse(str));
+        string str = numberString.ToString().Replace("_", "");
+        return new Token(TokenType.Number, str, decimal.Parse(str));
     }
 
-    private static Token.Token GetString(bool isNormalString)
+    private static Token GetString(bool isNormalString)
     {
         _position++;
         int startOfStringIndex = _position;
@@ -186,7 +197,7 @@ public static class Lexer
         string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length + 1;
         if (isNormalString) str = NormalizeString(str);
-        return new Token.Token(TokenType.String, str, str);
+        return new Token(TokenType.String, str, str);
     }
 
     private static string NormalizeString(string str)

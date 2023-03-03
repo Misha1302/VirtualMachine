@@ -47,6 +47,8 @@ public static class Parser
                     i++;
 
                     switchLabel:
+                    if (i + 1 >= tokens.Count) break;
+
                     switch (tokens[i].TokenType)
                     {
                         case TokenType.CloseParentheses:
@@ -312,13 +314,13 @@ public static class Parser
 
             { TokenType.ElemOf, 4 },
             { TokenType.IsNot, 3 },
-            
+
             { TokenType.LessThan, 2 },
             { TokenType.GreatThan, 2 },
-            
+
             { TokenType.IsNotEquals, 1 },
             { TokenType.IsEquals, 1 },
-            
+
             { TokenType.And, 0 },
             { TokenType.Or, 0 }
         };

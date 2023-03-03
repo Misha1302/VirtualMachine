@@ -21,7 +21,7 @@ public enum InstructionName : byte
     JumpIfNotZero,
     Ret,
     Jump,
-    End,
+    EndOfProgram,
     PushAddress,
     CreateVariable,
     PushConstant,

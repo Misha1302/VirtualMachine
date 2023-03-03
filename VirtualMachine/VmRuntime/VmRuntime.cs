@@ -100,7 +100,7 @@ public partial class VmRuntime
 
         List<Instruction> instructions = new();
 
-        while (operation != InstructionName.End)
+        while (operation != InstructionName.EndOfProgram)
         {
             Instruction instr = operation switch
             {

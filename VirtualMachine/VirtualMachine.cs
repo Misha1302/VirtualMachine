@@ -11,11 +11,8 @@ public static class VirtualMachine
     {
         VmRuntime.VmRuntime runtime = CreateNewRuntime(vmImage);
         Interlocked.Increment(ref _countOfTasks);
-        new Thread(() =>
-        {
-            if (_countOfTasks == 1) _stopwatch = Stopwatch.StartNew();
-            runtime.Run();
-        }).Start();
+        if (_countOfTasks == 1) _stopwatch = Stopwatch.StartNew();
+        new Thread(runtime.Run).Start();
     }
 
     public static void RunAndWait(VmImage vmImage)

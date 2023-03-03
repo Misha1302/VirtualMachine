@@ -95,7 +95,7 @@ public static class Library
         object memoryARegister = vmRuntime.Memory.Pop() ?? throw new NullReferenceException();
 
         decimal value = memoryARegister is string s
-            ? Convert.ToDecimal(s.Replace('.', ',').Replace("_", ""))
+            ? Convert.ToDecimal(s.Replace("_", ""))
             : Convert.ToDecimal(memoryARegister);
 
         vmRuntime.Memory.Push(value);

@@ -43,7 +43,9 @@ public partial class VmRuntime
 
     private void Execute(IReadOnlyList<Instruction> instructionsReadonlyList)
     {
+#pragma warning disable CS8321
         void LogExtraInfo(ReadOnlySpan<Instruction> instructions)
+#pragma warning restore CS8321
         {
             Console.Write(instructions[Memory.Ip].Method.Name);
             if (Memory.Constants.TryGetValue(Memory.Ip, out object? value)) Console.Write($" - {ObjectToString(value)}");

@@ -1,6 +1,6 @@
-﻿using System.Diagnostics;
+﻿namespace VirtualMachine;
 
-namespace VirtualMachine;
+using System.Diagnostics;
 
 public static class VirtualMachine
 {
@@ -9,10 +9,13 @@ public static class VirtualMachine
 
     public static void Run(VmImage vmImage)
     {
-        Interlocked.Increment(ref _countOfTasks);
         VmRuntime.VmRuntime runtime = CreateNewRuntime(vmImage);
-        if (_countOfTasks == 1) _stopwatch = Stopwatch.StartNew();
-        new Thread(runtime.Run).Start();
+        Interlocked.Increment(ref _countOfTasks);
+        new Thread(() =>
+        {
+            if (_countOfTasks == 1) _stopwatch = Stopwatch.StartNew();
+            runtime.Run();
+        }).Start();
     }
 
     public static void RunAndWait(VmImage vmImage)

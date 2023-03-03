@@ -63,12 +63,13 @@ public class VmCompiler
         CompileNextBlock(TokenType.Semicolon);
         _image.Goto(endOfLoopLabel, InstructionName.JumpIfZero);
 
+        _i++;
         int iCopy = _i;
-        PassTokensBeforeNext(TokenType.NewLine);
+        PassTokensBeforeNext(TokenType.NewLine | TokenType.Semicolon);
         CompileNextBlock(TokenType.End);
         int copy = _i;
         _i = iCopy;
-        CompileNextBlock(TokenType.NewLine);
+        CompileNextBlock(TokenType.NewLine | TokenType.Semicolon);
         _i = copy;
 
         _image.Goto(loopLabel, InstructionName.Jump);
@@ -77,7 +78,7 @@ public class VmCompiler
 
     private void PassTokensBeforeNext(TokenType endTokens)
     {
-        while (!endTokens.HasFlag(_tokens[_i - 1].TokenType)) _i++;
+        while (!endTokens.HasFlag(_tokens[_i].TokenType)) _i++;
     }
 
     private void CompileNextBlock(TokenType endTokenType)
@@ -208,7 +209,7 @@ public class VmCompiler
     private void CompileReturn()
     {
         _i++;
-        CompileNextBlock(TokenType.NewLine);
+        CompileNextBlock(TokenType.NewLine | TokenType.Semicolon);
 
         _image.WriteNextOperation(InstructionName.Ret);
     }
@@ -255,7 +256,7 @@ public class VmCompiler
     private void CompileList()
     {
         _image.WriteNextOperation(InstructionName.PushConstant, new VmList());
-        PassTokensBeforeNext(TokenType.NewLine);
+        PassTokensBeforeNext(TokenType.NewLine | TokenType.Semicolon);
         _i--;
     }
 
@@ -268,7 +269,7 @@ public class VmCompiler
     private void CompileIf()
     {
         _i++;
-        CompileNextBlock(TokenType.NewLine);
+        CompileNextBlock(TokenType.NewLine | TokenType.Semicolon);
 
         string labelNameElse = GetNextLabelName();
         string labelNameEnd = GetNextLabelName();

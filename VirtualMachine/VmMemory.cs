@@ -6,6 +6,8 @@ using VirtualMachine.VmRuntime;
 
 namespace VirtualMachine;
 
+using System.Runtime.CompilerServices;
+
 public record VmMemory
 {
     private const int RecursionSize = 0xFFFF;
@@ -30,12 +32,14 @@ public record VmMemory
     {
         return new Stack<object?>(CurrentFunctionFrame.Stack[..CurrentFunctionFrame.Sp].Reverse());
     }
-
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Push(object? obj)
     {
         CurrentFunctionFrame.Stack[CurrentFunctionFrame.Sp++] = obj;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public object? Pop()
     {
         return CurrentFunctionFrame.Stack[--CurrentFunctionFrame.Sp];
@@ -54,7 +58,7 @@ public record VmMemory
     public VmVariable FindVariableById(int id)
     {
         VmList<VmVariable> vmList = CurrentFunctionFrame.Variables;
-
+        
         for (int i = vmList.Len - 1; i >= 0; i--)
             if (vmList[i].Id == id)
                 return vmList[i];

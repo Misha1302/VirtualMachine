@@ -112,7 +112,7 @@ public static class Lexer
     private static Token GetNextToken()
     {
         char c = _code[_position];
-        if (_code[_position] == '\n' && _code[_position + 1] == '\r') return ReturnNewLine();
+        if (_code[_position] == '\r' && _code[_position + 1] == '\n') return ReturnNewLine();
         if (char.IsWhiteSpace(c)) return ReturnWhitespace(c);
         if (char.IsDigit(c) && PreviousTokenIsDelimiter()) return GetNumber();
 

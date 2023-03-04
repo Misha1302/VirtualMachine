@@ -1,13 +1,13 @@
 ﻿// This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
+namespace VirtualMachine.VmRuntime;
+
 using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using VirtualMachine.Variables;
-
-namespace VirtualMachine.VmRuntime;
+using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
@@ -48,11 +48,12 @@ public partial class VmRuntime
 #pragma warning restore CS8321
         {
             Console.Write(instructions[Memory.Ip].Method.Name);
-            if (Memory.Constants.TryGetValue(Memory.Ip, out object? value)) Console.Write($" - {ObjectToString(value)}");
+            if (Memory.Constants.TryGetValue(Memory.Ip, out object? value))
+                Console.Write($" - {ObjectToString(value)}");
             Console.WriteLine();
         }
-        
-        
+
+
 #if DEBUG
         List<string> unused = instructionsReadonlyList.Select(x => x.Method.Name).ToList();
         StringBuilder stringBuilder = new();
@@ -77,10 +78,8 @@ public partial class VmRuntime
             ReadOnlySpan<Instruction> instructions = new(instructionsReadonlyList.ToArray());
             int instructionsLength = instructions.Length;
             for (Memory.Ip = 0; Memory.Ip < instructionsLength; Memory.Ip++)
-            {
                 // LogExtraInfo(instructions);
                 instructions[Memory.Ip]();
-            }
         }
 #if !DEBUG
         catch (Exception ex)

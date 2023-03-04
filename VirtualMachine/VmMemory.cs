@@ -1,12 +1,11 @@
 ﻿// This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-using VirtualMachine.Variables;
-using VirtualMachine.VmRuntime;
-
 namespace VirtualMachine;
 
 using System.Runtime.CompilerServices;
+using global::VirtualMachine.Variables;
+using global::VirtualMachine.VmRuntime;
 
 public record VmMemory
 {
@@ -32,7 +31,7 @@ public record VmMemory
     {
         return new Stack<object?>(CurrentFunctionFrame.Stack[..CurrentFunctionFrame.Sp].Reverse());
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Push(object? obj)
     {
@@ -58,7 +57,7 @@ public record VmMemory
     public VmVariable FindVariableById(int id)
     {
         VmList<VmVariable> vmList = CurrentFunctionFrame.Variables;
-        
+
         for (int i = vmList.Len - 1; i >= 0; i--)
             if (vmList[i].Id == id)
                 return vmList[i];
@@ -82,7 +81,7 @@ public record VmMemory
         object? returnObject = CurrentFunctionFrame.Sp != 0 ? Pop() : null;
 
         CurrentFunctionFrame = _functionsPool.FreeFunction();
-        
+
         Push(returnObject);
     }
 

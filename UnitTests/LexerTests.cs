@@ -1,7 +1,7 @@
-﻿using Tokenizer.Lexer;
-using Tokenizer.Token;
+﻿namespace UnitTests;
 
-namespace UnitTests;
+using Tokenizer.Lexer;
+using Tokenizer.Token;
 
 public class LexerTests
 {

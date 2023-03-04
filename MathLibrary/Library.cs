@@ -1,8 +1,10 @@
-﻿using System.Diagnostics;
-using VirtualMachine.VmRuntime;
+﻿
 
 // ReSharper disable once CheckNamespace
 namespace Library;
+
+using System.Diagnostics;
+using VirtualMachine.VmRuntime;
 
 public static class Library
 {
@@ -64,13 +66,13 @@ public static class Library
     public static void Round(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Push(NeilMath.Round(a));
+        vmRuntime.Memory.Push(decimal.Round(a));
     }
 
     public static void Ceil(VmRuntime vmRuntime)
     {
         decimal a = ReadDecimal(vmRuntime);
-        vmRuntime.Memory.Push(NeilMath.Ceiling(a));
+        vmRuntime.Memory.Push(decimal.Ceiling(a));
     }
 
     public static void Sign(VmRuntime vmRuntime)
@@ -129,10 +131,6 @@ public static class Library
         private const decimal PiQuarter = 0.7853981633974483096156608458m;
 
         private const decimal Ln10 = 2.3025850929940456840179914547m;
-
-        private const int MaxRoundingDigits = 28;
-
-        private const decimal DecimalRoundLimit = 1E28m;
 
         private const decimal SmallestNonZeroDec = 0.0000000000000000000000000001m;
 
@@ -562,89 +560,6 @@ public static class Library
             }
 
             return result;
-        }
-
-
-        public static decimal Round(decimal m)
-        {
-#if NETFRAMEWORK || NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP2_0 || NETCOREAPP2_1 || NETCOREAPP2_2 || NETCOREAPP3_0
-            return decimal.Round(m);
-#else
-            return Round(m, 0, MidpointRounding.ToEven);
-#endif
-        }
-
-
-        public static decimal Round(decimal m, int digits)
-        {
-#if NETFRAMEWORK || NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP2_0 || NETCOREAPP2_1 || NETCOREAPP2_2 || NETCOREAPP3_0
-            return decimal.Round(m, digits);
-#else
-            return Round(m, digits, MidpointRounding.ToEven);
-#endif
-        }
-
-
-        public static decimal Round(decimal m, MidpointRounding mode)
-        {
-#if NETFRAMEWORK || NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP2_0 || NETCOREAPP2_1 || NETCOREAPP2_2 || NETCOREAPP3_0
-            return decimal.Round(m, mode);
-#else
-            return Round(m, 0, mode);
-#endif
-        }
-
-
-        public static decimal Round(decimal m, int digits, MidpointRounding mode)
-        {
-#if NETFRAMEWORK || NETSTANDARD2_0 || NETSTANDARD2_1 || NETCOREAPP2_0 || NETCOREAPP2_1 || NETCOREAPP2_2 || NETCOREAPP3_0
-            return decimal.Round(m, digits, mode);
-#else
-            if (digits is < 0 or > MaxRoundingDigits)
-                throw new ArgumentOutOfRangeException(nameof(digits));
-
-            // if (mode < MidpointRounding.ToEven || mode > MidpointRounding.ToPositiveInfinity)
-            if (mode < MidpointRounding.ToEven)
-                throw new ArgumentException(null, nameof(mode));
-
-            // int scale = m.Scale - digits;
-
-            if (Abs(m) >= DecimalRoundLimit) return m;
-            decimal power10 = _roundPower10Decimal[digits];
-
-            m *= power10;
-
-            switch (mode)
-            {
-                // Rounds to the nearest value; if the number falls midway,
-                // it is rounded to the nearest value with an even least significant digit
-                case MidpointRounding.ToEven:
-                {
-                    m = Round(m);
-                    break;
-                }
-
-                // Rounds to the nearest value; if the number falls midway,
-                // it is rounded to the nearest value above (for positive numbers) or below (for negative numbers)
-                case MidpointRounding.AwayFromZero:
-                {
-                    decimal fraction = 5; // ModF(x, &x);
-
-                    if (Abs(fraction) >= 0.5m) m += Sign(fraction);
-
-                    break;
-                }
-
-                default:
-                {
-                    throw new ArgumentException(nameof(mode));
-                }
-            }
-
-            m /= power10;
-
-            return m;
-#endif
         }
 
 

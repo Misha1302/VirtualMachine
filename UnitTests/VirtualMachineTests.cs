@@ -1,10 +1,12 @@
-﻿using Tokenizer.Parser;
+﻿namespace UnitTests;
+
+using Library;
+using Tokenizer.Parser;
 using Tokenizer.Token;
 using VirtualMachine;
 using VirtualMachine.Variables;
+using VmCompiler;
 using VmFacade;
-
-namespace UnitTests;
 
 public class VirtualMachineTests
 {
@@ -18,10 +20,10 @@ a
 
 
         List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-        VmCompiler.VmCompiler compiler = new(assemblyManager);
+        VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage);
         Assert.Multiple(() =>
         {
             Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
@@ -40,10 +42,10 @@ var b = 3
 
 
         List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-        VmCompiler.VmCompiler compiler = new(assemblyManager);
+        VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage);
         Assert.Multiple(() =>
         {
             Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
@@ -72,16 +74,16 @@ Sqrt(2)
 
 
         List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-        VmCompiler.VmCompiler compiler = new(assemblyManager);
+        VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage);
         Assert.Multiple(() =>
         {
             Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
 
             object? actual = memory.GetStack().Pop();
-            Assert.That(actual, Is.EqualTo(Library.Library.NeilMath.Sqrt(2)));
+            Assert.That(actual, Is.EqualTo(Library.NeilMath.Sqrt(2)));
         });
     }
 
@@ -98,10 +100,10 @@ end
 
 
         List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-        VmCompiler.VmCompiler compiler = new(assemblyManager);
+        VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage);
         Assert.Multiple(() =>
         {
             Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
@@ -124,10 +126,10 @@ end
 
 
         List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-        VmCompiler.VmCompiler compiler = new(assemblyManager);
+        VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage);
         Assert.Multiple(() =>
         {
             Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
@@ -181,10 +183,10 @@ end
 
 
         List<Token> tokens = Parser.Tokenize(code, VmConstants.MainLibraryPath, out AssemblyManager assemblyManager);
-        VmCompiler.VmCompiler compiler = new(assemblyManager);
+        VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage);
         Assert.Multiple(() =>
         {
             Assert.That(memory.GetStack(), Has.Count.EqualTo(1));

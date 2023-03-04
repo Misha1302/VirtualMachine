@@ -1,7 +1,7 @@
+namespace VirtualMachine;
+
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-
-namespace VirtualMachine;
 
 public class AssemblyManager
 {
@@ -12,10 +12,7 @@ public class AssemblyManager
 
     public CallingDelegate GetMethodByIndex(int index)
     {
-        lock (_methods)
-        {
-            return _methods[index];
-        }
+        lock (_methods) return _methods[index];
     }
 
 #pragma warning disable IL2075

@@ -1,8 +1,8 @@
-﻿using System.Collections;
+﻿namespace VirtualMachine.Variables;
+
+using System.Collections;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-
-namespace VirtualMachine.Variables;
 
 public class VmList : IEnumerable<object?>, ICloneable
 {

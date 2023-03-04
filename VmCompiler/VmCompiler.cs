@@ -89,7 +89,7 @@ public class VmCompiler
             if (contains) break;
 
             TokenType nextToken = _i + 1 != _tokens.Count ? _tokens[_i + 1].TokenType : default;
-            
+
             switch (_tokens[_i].TokenType)
             {
                 case TokenType.Variable when CanLoadVariable(nextToken):

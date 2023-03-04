@@ -1,8 +1,8 @@
-﻿using Tokenizer.Parser;
+﻿namespace UnitTests;
+
+using Tokenizer.Parser;
 using Tokenizer.Token;
 using VmFacade;
-
-namespace UnitTests;
 
 public class ParserTests
 {

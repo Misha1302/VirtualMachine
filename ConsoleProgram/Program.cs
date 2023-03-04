@@ -1,13 +1,25 @@
-﻿using System.Globalization;
-using System.Text;
+﻿const string code = """
+import 'MathLibrary\MathLibrary.dll' *
 
-int l = 5_000 * "PrintLn(1000 * 100)".Length;
-StringBuilder code = new(l);
-for (int i = 0; i < 5_000; i++)
-    code.AppendLine(
-        $"PrintLn({i.ToString(CultureInfo.InvariantCulture)} * {i.ToString(CultureInfo.InvariantCulture)})");
+loop var i = 0; i != 0-1; i = i + 1
+    PrintLn(2 + '**' + i + ' = ' + MyPow(2, i))
+end
 
-VmFacade.VmFacade.Run(code.ToString());
+func MyPow(var n, var power)
+    if power == 0
+        return 1
+    end
+
+    if power % 2 == 0
+        return MyPow(n * n, Round(power / 2))
+    end
+
+    var q = MyPow(n, power - 1)
+    return n * q
+end
+""";
+
+VmFacade.VmFacade.Run(code);
 
 #if !DEBUG
 async void WaitAndExit(int timeMs)

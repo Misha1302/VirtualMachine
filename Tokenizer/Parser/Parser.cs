@@ -305,11 +305,12 @@ public static class Parser
         {
             { TokenType.OpenParentheses, 0 },
             { TokenType.CloseParentheses, 0 },
-            { TokenType.Plus, 1 },
-            { TokenType.Minus, 1 },
-            { TokenType.Multiply, 2 },
-            { TokenType.Divide, 2 },
-            { TokenType.Modulo, 3 },
+
+            { TokenType.Plus, 1 + 10 },
+            { TokenType.Minus, 1 + 10 },
+            { TokenType.Multiply, 2 + 10 },
+            { TokenType.Divide, 2 + 10 },
+            { TokenType.Modulo, 3 + 10 },
 
 
             { TokenType.ElemOf, 4 },

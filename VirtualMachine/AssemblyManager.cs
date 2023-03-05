@@ -5,7 +5,7 @@ using System.Reflection;
 
 public class AssemblyManager
 {
-    public delegate void CallingDelegate(VmRuntime.VmRuntime vmRuntime);
+    public delegate void CallingDelegate(VmRuntime.VmRuntime vmRuntime, int argsCount);
 
     private readonly List<CallingDelegate> _methods = new();
     public readonly Dictionary<string, int> ImportedMethods = new();

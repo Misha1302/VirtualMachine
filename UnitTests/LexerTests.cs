@@ -1,10 +1,16 @@
 ﻿namespace UnitTests;
 
+using System.Globalization;
 using Tokenizer.Lexer;
 using Tokenizer.Token;
 
 public class LexerTests
 {
+    public LexerTests()
+    {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+    }
+
     [Test]
     public void Test0()
     {
@@ -33,26 +39,6 @@ public class LexerTests
             "\0",
             "Привет!\\!",
             "\\\\ \\\\ \\\\n \\\\r EDYeq\n"
-        }));
-    }
-
-    [Test]
-    public void Test2()
-    {
-        List<TokenType> tokens = Lexer.Tokenize(""" 
-var q = []
-0 elemOf q
-0 setElem of q to 3
-""").Select(x => x.TokenType).Where(x => x != TokenType.WhiteSpace).ToList();
-
-        Assert.That(tokens, Is.EqualTo(new List<TokenType>
-        {
-            TokenType.Var, TokenType.Unknown, TokenType.EqualsSign, TokenType.OpenBracket, TokenType.CloseBracket,
-            TokenType.NewLine,
-            TokenType.Number, TokenType.ElemOf, TokenType.Unknown,
-            TokenType.NewLine,
-            TokenType.Number, TokenType.SetElem, TokenType.Of, TokenType.Unknown, TokenType.To, TokenType.Number,
-            TokenType.Eof
         }));
     }
 }

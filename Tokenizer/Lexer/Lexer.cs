@@ -20,9 +20,6 @@ public static class Lexer
         { "(", TokenType.OpenParentheses },
         { ")", TokenType.CloseParentheses },
 
-        { "[", TokenType.OpenBracket },
-        { "]", TokenType.CloseBracket },
-
         { "+", TokenType.Plus },
         { "-", TokenType.Minus },
         { "*", TokenType.Multiply },
@@ -62,12 +59,10 @@ public static class Lexer
         { "not", TokenType.IsNot },
         { "gt", TokenType.GreatThan },
         { "lt", TokenType.LessThan },
+        { "struct", TokenType.Struct },
 
         { "and", TokenType.And },
-        { "or", TokenType.Or },
-
-        { "elemOf", TokenType.ElemOf },
-        { "setElem", TokenType.SetElem }
+        { "or", TokenType.Or }
     };
 
     private static readonly List<KeyValuePair<string, TokenType>> _sortedWords;

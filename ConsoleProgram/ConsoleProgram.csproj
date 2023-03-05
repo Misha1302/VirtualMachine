@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <OutputType>WinExe</OutputType>
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -18,10 +18,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj"/>
-        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj"/>
-        <ProjectReference Include="..\VmCompiler\VmCompiler.csproj"/>
-        <ProjectReference Include="..\VmFacade\VmFacade.csproj"/>
+        <ProjectReference Include="..\Tokenizer\Tokenizer.csproj" />
+        <ProjectReference Include="..\VirtualMachine\VirtualMachine.csproj" />
+        <ProjectReference Include="..\VmCompiler\VmCompiler.csproj" />
+        <ProjectReference Include="..\VmFacade\VmFacade.csproj" />
     </ItemGroup>
 
 </Project>

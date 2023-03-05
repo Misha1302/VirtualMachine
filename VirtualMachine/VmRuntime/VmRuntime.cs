@@ -1,7 +1,4 @@
-﻿// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-
-namespace VirtualMachine.VmRuntime;
+﻿namespace VirtualMachine.VmRuntime;
 
 using System.Globalization;
 using System.Reflection;
@@ -130,6 +127,8 @@ public partial class VmRuntime
                 InstructionName.NoOperation => NoOperation,
                 InstructionName.ElemOf => ElemOf,
                 InstructionName.SetElem => SetElem,
+                InstructionName.PushField => PushField,
+                InstructionName.SetField => SetField,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);
@@ -169,7 +168,7 @@ public partial class VmRuntime
 
 
         outputStringBuilder.Append("Variables={");
-        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.Variables.GetEnumerable().Select(x =>
+        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.GetVariables().Select(x =>
         {
             string obj = x.VariableValue switch
             {
@@ -201,8 +200,8 @@ public partial class VmRuntime
     private void ReadTwoNumbers(out decimal a, out decimal b)
     {
         ReadTwoValues(out object? obj0, out object? obj1);
-        a = (decimal)(obj0 ?? throw new InvalidOperationException());
-        b = (decimal)(obj1 ?? throw new InvalidOperationException());
+        a = decimal.Round((decimal)(obj0 ?? throw new InvalidOperationException()), 23);
+        b = decimal.Round((decimal)(obj1 ?? throw new InvalidOperationException()), 23);
     }
 
     private static string NumberToString(decimal m)
@@ -212,13 +211,14 @@ public partial class VmRuntime
 
     public static string ObjectToString(object? obj)
     {
+        const string empty = "empty";
         switch (obj)
         {
             case null:
-                return "null";
+                return empty;
             case decimal i:
-                i = decimal.Round(i, 23);
-                return i.ToString(CultureInfo.InvariantCulture).Replace(',', '.');
+                string objectToString = i.ToString("0." + new string('#', 20), CultureInfo.InvariantCulture);
+                return string.IsNullOrWhiteSpace(objectToString) ? "0" : objectToString;
             case string s:
                 return s;
             case VmList list when list.Len != 0 && list.All(x => x is char):
@@ -231,7 +231,7 @@ public partial class VmRuntime
                 {
                     string str = item switch
                     {
-                        null => "null, ",
+                        null => $"{empty}, ",
                         decimal m => $"{NumberToString(m)}, ",
                         string s => $"\"{s}\", ",
                         _ => $"{item}, "
@@ -239,6 +239,7 @@ public partial class VmRuntime
                     stringBuilder.Append(str);
                 }
 
+                if (list.Len > 0) stringBuilder.Append("\b\b");
                 stringBuilder.Append(']');
                 return stringBuilder.ToString();
         }

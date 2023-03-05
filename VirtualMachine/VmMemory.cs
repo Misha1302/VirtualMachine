@@ -1,7 +1,4 @@
-﻿// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-
-namespace VirtualMachine;
+﻿namespace VirtualMachine;
 
 using System.Runtime.CompilerServices;
 using global::VirtualMachine.Variables;
@@ -33,7 +30,7 @@ public record VmMemory
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Push(object? obj)
+    public void Push(in object? obj)
     {
         CurrentFunctionFrame.Stack[CurrentFunctionFrame.Sp++] = obj;
     }
@@ -49,18 +46,19 @@ public record VmMemory
         return CurrentFunctionFrame.Stack[CurrentFunctionFrame.Sp - 1];
     }
 
-    public void CreateVariable(VmVariable vmVariable)
+    public void CreateVariable(in VmVariable vmVariable)
     {
-        CurrentFunctionFrame.Variables.AddToEnd(vmVariable);
+        CurrentFunctionFrame.AddVariable(vmVariable);
     }
 
     public VmVariable FindVariableById(int id)
     {
-        VmList<VmVariable> vmList = CurrentFunctionFrame.Variables;
-
-        for (int i = vmList.Len - 1; i >= 0; i--)
-            if (vmList[i].Id == id)
-                return vmList[i];
+        for (int i = CurrentFunctionFrame.Vp - 1; i >= 0; i--)
+        {
+            VmVariable findVariableById = CurrentFunctionFrame.GetVariables()[i];
+            if (findVariableById.Id == id)
+                return findVariableById;
+        }
 
         throw new InvalidOperationException();
     }

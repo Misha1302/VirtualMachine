@@ -1,18 +1,22 @@
 ﻿namespace VirtualMachine;
 
 using System.Diagnostics;
+using System.Globalization;
 
 public static class VirtualMachine
 {
     private static Stopwatch? _stopwatch;
     private static volatile int _countOfTasks;
+    private static bool _programWasExit;
 
     public static void Run(VmImage vmImage)
     {
         VmRuntime.VmRuntime runtime = CreateNewRuntime(vmImage);
+        Thread thread = new(runtime.Run) { CurrentCulture = CultureInfo.InvariantCulture };
+
         Interlocked.Increment(ref _countOfTasks);
         if (_countOfTasks == 1) _stopwatch = Stopwatch.StartNew();
-        new Thread(runtime.Run).Start();
+        thread.Start();
     }
 
     public static void RunAndWait(VmImage vmImage)
@@ -40,6 +44,9 @@ public static class VirtualMachine
 
     private static void OnProgramExit()
     {
+        if (_programWasExit) return;
+        _programWasExit = true;
+
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("Program executed without exception");
         Console.ResetColor();
@@ -54,14 +61,17 @@ public static class VirtualMachine
         if (error is not null) GenerateException(vmRuntime, error);
     }
 
-    private static void GenerateException(VmRuntime.VmRuntime vmRuntime, Exception error)
+    private static void GenerateException(VmRuntime.VmRuntime vmRuntime, Exception exception)
     {
+        if (_programWasExit) return;
+        _programWasExit = true;
+
         Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(error.Message);
+        Console.WriteLine(exception.Message);
         Console.ResetColor();
 
         Console.WriteLine(vmRuntime.GetStateAsString());
-        Console.WriteLine(error.StackTrace);
+        Console.WriteLine(exception.StackTrace);
     }
 
     private static VmRuntime.VmRuntime CreateNewRuntime(VmImage vmImage)

@@ -1,11 +1,17 @@
 ﻿namespace UnitTests;
 
+using System.Globalization;
 using Tokenizer.Parser;
 using Tokenizer.Token;
 using VmFacade;
 
 public class ParserTests
 {
+    public ParserTests()
+    {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+    }
+
     [Test]
     public void Test0()
     {

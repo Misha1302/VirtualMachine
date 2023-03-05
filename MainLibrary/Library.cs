@@ -1,6 +1,5 @@
-﻿
+﻿// ReSharper disable once CheckNamespace
 
-// ReSharper disable once CheckNamespace
 namespace Library;
 
 using VirtualMachine.Variables;
@@ -10,19 +9,45 @@ public static class Library
 {
     // AddToEnd memory and pointers
     // AddToEnd dynamically create a new instance of external class
-    public static void PrintLn(VmRuntime vmRuntime)
+    public static void PrintLn(VmRuntime vmRuntime, int argsCount)
     {
         object? obj = vmRuntime.Memory.Pop();
         Console.WriteLine(VmRuntime.ObjectToString(obj));
     }
 
-    public static void Print(VmRuntime vmRuntime)
+    public static void Print(VmRuntime vmRuntime, int argsCount)
     {
         object? obj = vmRuntime.Memory.Pop();
         Console.Write(VmRuntime.ObjectToString(obj));
     }
 
-    public static void LenOf(VmRuntime vmRuntime)
+    public static void GetElement(VmRuntime vmRuntime, int argsCount)
+    {
+        int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        VmList array = (VmList)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+
+        vmRuntime.Memory.Push(array[index]);
+    }
+
+    public static void SetElement(VmRuntime vmRuntime, int argsCount)
+    {
+        object? value = vmRuntime.Memory.Pop();
+        VmList array = (VmList)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+
+        array[index] = value;
+    }
+
+    public static void CreateArray(VmRuntime vmRuntime, int argsCount)
+    {
+        object?[] objects = new object?[argsCount];
+        for (int i = argsCount - 1; i >= 0; i--) objects[i] = vmRuntime.Memory.Pop();
+
+        VmList vmList = new(objects);
+        vmRuntime.Memory.Push(vmList);
+    }
+
+    public static void LenOf(VmRuntime vmRuntime, int argsCount)
     {
         object? obj = vmRuntime.Memory.Pop();
         decimal dec = obj switch
@@ -36,30 +61,30 @@ public static class Library
         vmRuntime.Memory.Push(dec);
     }
 
-    public static void MaxNumber(VmRuntime vmRuntime)
+    public static void MaxNumber(VmRuntime vmRuntime, int argsCount)
     {
         vmRuntime.Memory.Push(decimal.MaxValue);
     }
 
-    public static void MinNumber(VmRuntime vmRuntime)
+    public static void MinNumber(VmRuntime vmRuntime, int argsCount)
     {
         vmRuntime.Memory.Push(decimal.MinValue);
     }
 
-    public static void ValueToString(VmRuntime vmRuntime)
+    public static void ValueToString(VmRuntime vmRuntime, int argsCount)
     {
         object? obj = vmRuntime.Memory.Pop();
         vmRuntime.Memory.Push(VmRuntime.ObjectToString(obj));
     }
 
-    public static void ToCharArray(VmRuntime vmRuntime)
+    public static void ToCharArray(VmRuntime vmRuntime, int argsCount)
     {
         object? obj = vmRuntime.Memory.Pop();
         string str = (string)(obj ?? throw new InvalidOperationException());
         vmRuntime.Memory.Push(str.ToCharArray().Select(x => (object)x).ToList());
     }
 
-    public static void Reverse(VmRuntime vmRuntime)
+    public static void Reverse(VmRuntime vmRuntime, int argsCount)
     {
         object? obj = vmRuntime.Memory.Pop();
         if (obj is VmList list)
@@ -87,12 +112,12 @@ public static class Library
         }
     }
 
-    public static void Input(VmRuntime vmRuntime)
+    public static void Input(VmRuntime vmRuntime, int argsCount)
     {
         vmRuntime.Memory.Push(Console.ReadLine());
     }
 
-    public static void StringToNumber(VmRuntime vmRuntime)
+    public static void StringToNumber(VmRuntime vmRuntime, int argsCount)
     {
         object memoryARegister = vmRuntime.Memory.Pop() ?? throw new NullReferenceException();
 
@@ -103,12 +128,12 @@ public static class Library
         vmRuntime.Memory.Push(value);
     }
 
-    public static void PrintState(VmRuntime vmRuntime)
+    public static void PrintState(VmRuntime vmRuntime, int argsCount)
     {
         Console.WriteLine(vmRuntime.GetStateAsString());
     }
 
-    public static void RandomInteger(VmRuntime vmRuntime)
+    public static void RandomInteger(VmRuntime vmRuntime, int argsCount)
     {
         int max = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new NullReferenceException());
         int min = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new NullReferenceException());

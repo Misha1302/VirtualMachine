@@ -1,5 +1,6 @@
 ﻿namespace UnitTests;
 
+using System.Globalization;
 using Library;
 using Tokenizer.Parser;
 using Tokenizer.Token;
@@ -10,6 +11,11 @@ using VmFacade;
 
 public class VirtualMachineTests
 {
+    public VirtualMachineTests()
+    {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+    }
+
     [Test]
     public void Test0()
     {
@@ -143,13 +149,8 @@ end
     public void Test5()
     {
         const string code = @"
-var arr = []
-
-0 setElem arr IsPrime(2) # 1
-1 setElem arr IsPrime(5) # 1
-2 setElem arr IsPrime(6) # 0
-3 setElem arr IsPrime(9) # 0
-4 setElem arr IsPrime(257) # 1
+var arr = CreateArray(IsPrime(2), IsPrime(5), IsPrime(6), IsPrime(9))
+SetElement(5, arr, IsPrime(257))
 
 arr
 
@@ -191,13 +192,12 @@ end
         {
             Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
 
-            Stack<object?> stack = memory.GetStack();
-            VmList objects = stack.Pop() as VmList ?? throw new InvalidOperationException();
-            Assert.That(objects[0], Is.EqualTo(1));
+            VmList objects = memory.Pop() as VmList ?? throw new InvalidOperationException();
             Assert.That(objects[1], Is.EqualTo(1));
-            Assert.That(objects[2], Is.EqualTo(0));
+            Assert.That(objects[2], Is.EqualTo(1));
             Assert.That(objects[3], Is.EqualTo(0));
-            Assert.That(objects[4], Is.EqualTo(1));
+            Assert.That(objects[4], Is.EqualTo(0));
+            Assert.That(objects[5], Is.EqualTo(1));
         });
     }
 }

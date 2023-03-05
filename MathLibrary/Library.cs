@@ -1,6 +1,5 @@
-﻿
+﻿// ReSharper disable once CheckNamespace
 
-// ReSharper disable once CheckNamespace
 namespace Library;
 
 using System.Diagnostics;
@@ -8,7 +7,7 @@ using VirtualMachine.VmRuntime;
 
 public static class Library
 {
-    public static void Sqrt(VmRuntime vmRuntime)
+    public static void Sqrt(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Sqrt(a));
@@ -16,96 +15,95 @@ public static class Library
 
     private static decimal ReadDecimal(VmRuntime vmRuntime)
     {
-        decimal a = (decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
-        return a;
+        return (decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
     }
 
-    public static void Pow(VmRuntime vmRuntime)
+    public static void Pow(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         decimal b = (decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
         vmRuntime.Memory.Push(NeilMath.Pow(a, b));
     }
 
-    public static void Abs(VmRuntime vmRuntime)
+    public static void Abs(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Abs(a));
     }
 
-    public static void Cos(VmRuntime vmRuntime)
+    public static void Cos(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Cos(a));
     }
 
-    public static void Sin(VmRuntime vmRuntime)
+    public static void Sin(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Sin(a));
     }
 
-    public static void Tan(VmRuntime vmRuntime)
+    public static void Tan(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Tan(a));
     }
 
-    public static void Exp(VmRuntime vmRuntime)
+    public static void Exp(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Exp(a));
     }
 
-    public static void Truncate(VmRuntime vmRuntime)
+    public static void Truncate(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Truncate(a));
     }
 
-    public static void Round(VmRuntime vmRuntime)
+    public static void Round(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(decimal.Round(a));
     }
 
-    public static void Ceil(VmRuntime vmRuntime)
+    public static void Ceil(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(decimal.Ceiling(a));
     }
 
-    public static void Sign(VmRuntime vmRuntime)
+    public static void Sign(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push((decimal)NeilMath.Sign(a));
     }
 
-    public static void Floor(VmRuntime vmRuntime)
+    public static void Floor(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Floor(a));
     }
 
-    public static void Acos(VmRuntime vmRuntime)
+    public static void Acos(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Acos(a));
     }
 
-    public static void Asin(VmRuntime vmRuntime)
+    public static void Asin(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Asin(a));
     }
 
-    public static void Atan(VmRuntime vmRuntime)
+    public static void Atan(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Atan(a));
     }
 
-    public static void Log10(VmRuntime vmRuntime)
+    public static void Log10(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
         vmRuntime.Memory.Push(NeilMath.Log10(a));

@@ -33,5 +33,7 @@ public enum InstructionName : byte
     SetElem,
 
     Or,
-    And
+    And,
+    PushField,
+    SetField
 }

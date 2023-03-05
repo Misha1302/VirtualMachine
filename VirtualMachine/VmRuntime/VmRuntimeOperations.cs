@@ -1,7 +1,4 @@
-﻿// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
-
-namespace VirtualMachine.VmRuntime;
+﻿namespace VirtualMachine.VmRuntime;
 
 using System.Data;
 using System.Runtime.CompilerServices;
@@ -49,7 +46,8 @@ public partial class VmRuntime
         {
             case decimal m:
                 decimal m1 = (decimal)b;
-                Memory.Push(m1.IsEquals(m) ? 1m : 0m);
+                decimal o = m1.IsEquals(m) ? 1m : 0m;
+                Memory.Push(o);
                 break;
             case VmList list:
                 VmList list1 = (VmList)b;
@@ -173,7 +171,7 @@ public partial class VmRuntime
 
     private void SetVariable()
     {
-        GetVmVariable().ChangeValue(Memory.Pop());
+        GetVmVariable().VariableValue = Memory.Pop();
     }
 
     private void LoadVariable()
@@ -191,16 +189,11 @@ public partial class VmRuntime
 
     private void CallMethod()
     {
-        object obj = Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException();
+        object[] memoryConstant = (object[])(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
+        int index = (int)memoryConstant[0];
+        int countOfArgs = (int)memoryConstant[1];
 
-        int index = obj switch
-        {
-            decimal d => (int)d,
-            int i => i,
-            _ => throw new InvalidCastException(obj.GetType().ToString())
-        };
-
-        _assemblyManager.GetMethodByIndex(index).Invoke(this);
+        _assemblyManager.GetMethodByIndex(index).Invoke(this, countOfArgs);
     }
 
 
@@ -288,8 +281,8 @@ public partial class VmRuntime
 
         // ReSharper disable once ForCanBeConvertedToForeach
         // ReSharper disable once LoopCanBeConvertedToQuery
-        for (int index = 0; index < Memory.CurrentFunctionFrame.Variables.Len; index++)
-            if (Memory.CurrentFunctionFrame.Variables[index].Id == variableId)
+        for (int index = Memory.CurrentFunctionFrame.Vp - 1; index >= 0; index--)
+            if (Memory.CurrentFunctionFrame.GetVariables()[index].Id == variableId)
                 return;
 
         Memory.CreateVariable(new VmVariable(variable.Name));
@@ -348,5 +341,42 @@ public partial class VmRuntime
     {
         ReadTwoNumbers(out decimal a, out decimal b);
         Memory.Push(a == 1 && b == 1 ? 1m : 0m);
+    }
+
+    private void PushField()
+    {
+        Structure structure = (Structure)(Memory.Pop() ?? throw new InvalidOperationException());
+        decimal fieldId = (decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
+
+        Memory.Push(structure.GetValue(fieldId));
+    }
+
+    private void SetField()
+    {
+        Structure structure = (Structure)(Memory.Pop() ?? throw new InvalidOperationException());
+        decimal fieldId = (decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
+        object? value = Memory.Pop();
+
+        structure.SetValue(fieldId, value);
+    }
+}
+
+public class Structure
+{
+    private readonly Dictionary<decimal, object?> _values = new();
+
+    public Structure(IEnumerable<int> ids)
+    {
+        foreach (int id in ids) _values.Add(id, null);
+    }
+
+    public void SetValue(decimal id, object? obj)
+    {
+        _values[id] = obj;
+    }
+
+    public object? GetValue(decimal id)
+    {
+        return _values[id];
     }
 }

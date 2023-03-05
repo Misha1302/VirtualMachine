@@ -1,21 +1,29 @@
 ﻿const string code = """
-import 'MathLibrary\MathLibrary.dll' *
+var a = MyStruct
 
-loop var i = 0; i != 0-1; i = i + 1
-    PrintLn(2 + '**' + i + ' = ' + MyPow(2, i))
+a.x = 5
+a.y = 6
+a.z = 7
+
+var b = MyStruct
+b.q0 = RandomInteger(0, 5)
+b.q1 = RandomInteger(0, 5)
+b.q2 = RandomInteger(0, 5)
+
+PrintLn(a.x + b.q0)
+PrintLn(a.y + b.q1)
+PrintLn(a.z + b.q2)
+
+struct MyStruct 
+    var x
+    var y
+    var z
 end
 
-func MyPow(var n, var power)
-    if power == 0
-        return 1
-    end
-
-    if power % 2 == 0
-        return MyPow(n * n, Round(power / 2))
-    end
-
-    var q = MyPow(n, power - 1)
-    return n * q
+struct MyStruct2
+    var q0
+    var q1
+    var q2
 end
 """;
 

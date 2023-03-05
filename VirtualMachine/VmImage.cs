@@ -170,8 +170,8 @@ public class VmImage
         Goto(funcName, InstructionName.Jump);
     }
 
-    public void CallForeignMethod(string name)
+    public void CallForeignMethod(string name, int argsCount)
     {
-        WriteNextOperation(InstructionName.CallMethod, AssemblyManager.ImportedMethods[name]);
+        WriteNextOperation(InstructionName.CallMethod, AssemblyManager.ImportedMethods[name], argsCount);
     }
 }

@@ -9,7 +9,7 @@ public class VmCompiler
 {
     private readonly Dictionary<string, List<string>> _functions = new();
     private readonly VmImage _image;
-    private readonly Dictionary<string, Dictionary<string, int>> _structures = new();
+    private readonly Dictionary<string, List<string>> _structures = new();
     private int _i;
     private string _labelName = "label0";
     private List<Token> _tokens = new();
@@ -120,9 +120,6 @@ public class VmCompiler
                 case TokenType.GreatThan:
                     _image.WriteNextOperation(InstructionName.GreatThan);
                     break;
-                case TokenType.Modulo:
-                    _image.WriteNextOperation(InstructionName.Modulo);
-                    break;
                 case TokenType.IsEquals:
                     _image.WriteNextOperation(InstructionName.Equals);
                     break;
@@ -223,7 +220,7 @@ public class VmCompiler
     private void CompileNewStructure()
     {
         string structName = _tokens[_i].Text;
-        Structure newStructure = new(_structures[structName].Select(x => x.Value));
+        Structure newStructure = new(_structures[structName]);
         _image.WriteNextOperation(InstructionName.PushConstant, newStructure);
     }
 
@@ -285,11 +282,11 @@ public class VmCompiler
     {
         string structName = _tokens[_i].Text;
 
-        Dictionary<string, int> entities = new();
+        List<string> entities = new();
 
         while (_tokens[++_i].TokenType != TokenType.End)
             if (_tokens[_i].TokenType == TokenType.NewVariable)
-                entities.Add(_tokens[_i].Text, IdManager.MakeHashCode(_tokens[_i].Text));
+                entities.Add(_tokens[_i].Text);
 
         _structures.Add(structName, entities);
     }

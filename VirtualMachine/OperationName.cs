@@ -26,14 +26,12 @@ public enum InstructionName : byte
     CreateVariable,
     PushConstant,
     NoOperation,
-    ElemOf,
     GreatThan,
     Drop,
-    Modulo,
-    SetElem,
 
     Or,
     And,
     PushField,
-    SetField
+    SetField,
+    Modulo
 }

@@ -29,13 +29,11 @@ public record VmMemory
         return new Stack<object?>(CurrentFunctionFrame.Stack[..CurrentFunctionFrame.Sp].Reverse());
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Push(in object? obj)
+    public void Push(object? obj)
     {
         CurrentFunctionFrame.Stack[CurrentFunctionFrame.Sp++] = obj;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public object? Pop()
     {
         return CurrentFunctionFrame.Stack[--CurrentFunctionFrame.Sp];
@@ -46,7 +44,7 @@ public record VmMemory
         return CurrentFunctionFrame.Stack[CurrentFunctionFrame.Sp - 1];
     }
 
-    public void CreateVariable(in VmVariable vmVariable)
+    public void CreateVariable(VmVariable vmVariable)
     {
         CurrentFunctionFrame.AddVariable(vmVariable);
     }
@@ -55,7 +53,7 @@ public record VmMemory
     {
         for (int i = CurrentFunctionFrame.Vp - 1; i >= 0; i--)
         {
-            VmVariable findVariableById = CurrentFunctionFrame.GetVariables()[i];
+            VmVariable findVariableById = CurrentFunctionFrame.Variables[i];
             if (findVariableById.Id == id)
                 return findVariableById;
         }
@@ -72,6 +70,7 @@ public record VmMemory
         for (int i = 0; i < paramsCount; i++) Push(_params[i]);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void OnFunctionExit()
     {
         Ip = _recursionStack.Pop();

@@ -4,7 +4,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-public class VmList : IEnumerable<object?>, ICloneable
+public class VmList : IEnumerable<object?>, ICloneable, IEquatable<VmList>
 {
     private object?[] _array;
 
@@ -47,6 +47,13 @@ public class VmList : IEnumerable<object?>, ICloneable
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    public bool Equals(VmList? other)
+    {
+        if (ReferenceEquals(null, other)) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return Len == other.Len && _array[Len..].SequenceEqual(other._array[other.Len..]);
     }
 
     public void SetElement(int index, object? obj)
@@ -92,5 +99,18 @@ public class VmList : IEnumerable<object?>, ICloneable
     public void RemoveEnd()
     {
         Len--;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (ReferenceEquals(null, obj)) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((VmList)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(_array, Len);
     }
 }

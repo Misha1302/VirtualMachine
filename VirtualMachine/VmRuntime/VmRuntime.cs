@@ -125,8 +125,6 @@ public partial class VmRuntime
                 InstructionName.CreateVariable => CreateVariable,
                 InstructionName.PushConstant => PushConstant,
                 InstructionName.NoOperation => NoOperation,
-                InstructionName.ElemOf => ElemOf,
-                InstructionName.SetElem => SetElem,
                 InstructionName.PushField => PushField,
                 InstructionName.SetField => SetField,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
@@ -168,7 +166,7 @@ public partial class VmRuntime
 
 
         outputStringBuilder.Append("Variables={");
-        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.GetVariables().Select(x =>
+        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.Variables.Select(x =>
         {
             string obj = x.VariableValue switch
             {
@@ -191,12 +189,14 @@ public partial class VmRuntime
         return outputStringBuilder.ToString();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadTwoValues(out object? obj0, out object? obj1)
     {
         obj1 = Memory.Pop();
         obj0 = Memory.Pop();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReadTwoNumbers(out decimal a, out decimal b)
     {
         ReadTwoValues(out object? obj0, out object? obj1);

@@ -15,8 +15,8 @@ public record Token(TokenType TokenType, string Text, object? Value = null)
 
 public record ExtraInfo
 {
+    public readonly List<Token> Params = new();
     public int ArgsCount;
     public bool IsPartOfExpression;
     public bool Marked;
-    public List<Token> Params = new();
 }

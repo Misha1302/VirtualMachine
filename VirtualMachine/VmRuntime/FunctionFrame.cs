@@ -9,7 +9,8 @@ public record FunctionFrame
     public readonly Dictionary<int, VmVariable> Variables = new(32);
 
     public string? FuncName;
-    public int Sp = 0;
+
+    public int Sp;
 
     public void AddVariable(VmVariable variable)
     {

@@ -18,7 +18,11 @@ public static class Parser
         tokens = tokens.Where(x =>
             x.TokenType is not TokenType.WhiteSpace and not TokenType.Comment and not TokenType.AtSign).ToList();
 
-        tokens.InsertRange(0, new[] { new Token(TokenType.Var, "var"), new Token(TokenType.Unknown, "_") });
+        tokens.InsertRange(0, new[]
+        {
+            new Token(TokenType.Var, "var"), new Token(TokenType.Unknown, "_"),
+            new Token(TokenType.Var, "var"), new Token(TokenType.Unknown, "error")
+        });
 
         ImportMethods(tokens, mainLibPath);
         DetectEntities(tokens);

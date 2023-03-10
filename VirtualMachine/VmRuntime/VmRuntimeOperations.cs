@@ -172,7 +172,7 @@ public partial class VmRuntime
 
     private void JumpIfNotZero()
     {
-        int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        int ip = (int)(decimal)(GetConstant() ?? throw new InvalidOperationException());
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
         switch (obj)
         {
@@ -191,7 +191,7 @@ public partial class VmRuntime
 
     private void JumpIfZero()
     {
-        int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        int ip = (int)(decimal)(GetConstant() ?? throw new InvalidOperationException());
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
 
         if ((decimal)obj == 0) JumpInternal(ip);
@@ -236,7 +236,7 @@ public partial class VmRuntime
 
     private void Jump()
     {
-        int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
+        int ip = (int)(decimal)(GetConstant() ?? throw new InvalidOperationException());
         JumpInternal(ip);
     }
 
@@ -271,12 +271,6 @@ public partial class VmRuntime
     private static void NoOperation()
     {
         // no operation
-    }
-
-
-    private void Drop()
-    {
-        Memory.Drop();
     }
 
     private void Or()
@@ -324,5 +318,10 @@ public partial class VmRuntime
                 Memory.Push(a != null && a.Equals(b) ? _zero : _one);
                 break;
         }
+    }
+
+    private void PushFailed()
+    {
+        _failedStack.Push((int)(decimal)(GetConstant() ?? throw new InvalidOperationException()));
     }
 }

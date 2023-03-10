@@ -13,7 +13,7 @@ public class AssemblyManager
     {
         return _methods[index];
     }
-    
+
 
     public void ImportMethod(MethodInfo method)
     {

@@ -62,7 +62,7 @@ public class VmImage
     }
 
 
-    private void WriteNextConstant(object? word, int? position = null)
+    public void WriteNextConstant(object? word, int? position = null)
     {
         int pos = position ?? Ip - 1;
         _memory.Constants.Add(pos, word);
@@ -131,7 +131,6 @@ public class VmImage
     public void Goto(string label, InstructionName jumpInstruction)
     {
         _goto.Add((label, Ip));
-        WriteNextOperation(InstructionName.PushConstant);
         WriteNextOperation(jumpInstruction);
     }
 
@@ -145,7 +144,6 @@ public class VmImage
     {
         int constantPtr = Ip;
         WriteNextConstant((decimal)-1, constantPtr);
-        WriteNextOperation(InstructionName.PushConstant);
         WriteNextOperation(InstructionName.Jump);
 
         SetLabel(name);
@@ -174,5 +172,10 @@ public class VmImage
             AssemblyManager.GetMethodByIndex(AssemblyManager.ImportedMethods[name]);
 
         WriteNextOperation(InstructionName.CallMethod, method, argsCount);
+    }
+
+    public void ReplaceConstant(int constantPtr, object? value)
+    {
+        _memory.Constants[constantPtr] = value;
     }
 }

@@ -9,6 +9,7 @@ public partial class VmRuntime
 {
     private const int Decimals = 23;
     private static readonly string _numberFormat = "0." + new string('#', 20);
+    private readonly Stack<int> _failedStack = new();
 
     private List<Instruction>? _instructions;
     private Dictionary<int, int> _pointersToInsertVariables = new(64);
@@ -26,8 +27,9 @@ public partial class VmRuntime
         Execute(_instructions ?? throw new InvalidOperationException());
     }
 
-    private void Execute(IReadOnlyList<Instruction> instructionsReadonlyList)
+    private void Execute(IEnumerable<Instruction> instructionsEnumerable)
     {
+#pragma warning disable CS8321
         void LogExtraInfo(ReadOnlySpan<Instruction> instructions)
         {
             Console.Write(instructions[Memory.Ip].Method.Name);
@@ -35,25 +37,29 @@ public partial class VmRuntime
                 Console.Write($" - {ObjectToString(value)}");
             Console.WriteLine();
         }
+#pragma warning restore CS8321
 
-#if !DEBUG
-        try
-#endif
-        {
-            ReadOnlySpan<Instruction> instructions = new(instructionsReadonlyList.ToArray());
-            for (Memory.Ip = 0; Memory.Ip >= 0; Memory.Ip++)
+        ReadOnlySpan<Instruction> instructions = new(instructionsEnumerable.ToArray());
+        for (Memory.Ip = 0; Memory.Ip >= 0; Memory.Ip++)
+            try
             {
                 // LogExtraInfo(instructions);
+
                 instructions[Memory.Ip]();
             }
-        }
-#if !DEBUG
-        catch (Exception ex)
-        {
-            Exit(ex);
-            return;
-        }
-#endif
+            catch (DivideByZeroException ex)
+            {
+                if (_failedStack.TryPop(out int pointer))
+                {
+                    Memory.Ip = pointer;
+                    Memory.Push(ex.Message);
+                }
+                else
+                {
+                    Exit(ex);
+                    return;
+                }
+            }
 
         Exit(null);
     }
@@ -86,7 +92,6 @@ public partial class VmRuntime
                 InstructionName.GreatThan => GreatThan,
                 InstructionName.Halt => Halt,
                 InstructionName.Ret => Ret,
-                InstructionName.Drop => Drop,
                 InstructionName.PushAddress => PushAddress,
                 InstructionName.Or => Or,
                 InstructionName.And => And,
@@ -99,6 +104,7 @@ public partial class VmRuntime
                 InstructionName.Increase => Increase,
                 InstructionName.Decrease => Decrease,
                 InstructionName.NotEquals => NotEquals,
+                InstructionName.PushFailed => PushFailed,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);

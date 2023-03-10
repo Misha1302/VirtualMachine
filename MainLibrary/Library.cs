@@ -2,11 +2,14 @@
 
 namespace Library;
 
+using System.Diagnostics;
 using VirtualMachine.Variables;
 using VirtualMachine.VmRuntime;
 
 public static class Library
 {
+    private static readonly Stopwatch _stopwatch = Stopwatch.StartNew();
+
     // AddToEnd memory and pointers
     // AddToEnd dynamically create a new instance of external class
     public static void PrintLn(VmRuntime vmRuntime, int argsCount)
@@ -19,6 +22,11 @@ public static class Library
     {
         object? obj = vmRuntime.Memory.Pop();
         Console.Write(VmRuntime.ObjectToString(obj));
+    }
+
+    public static void GetTime(VmRuntime vmRuntime, int argsCount)
+    {
+        vmRuntime.Memory.Push((decimal)_stopwatch.ElapsedMilliseconds);
     }
 
     public static void GetElement(VmRuntime vmRuntime, int argsCount)

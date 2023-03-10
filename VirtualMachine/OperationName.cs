@@ -36,5 +36,6 @@ public enum InstructionName : byte
     Modulo,
     Increase,
     Decrease,
-    NotEquals
+    NotEquals,
+    PushFailed
 }

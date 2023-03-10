@@ -14,13 +14,13 @@ public record VmMemory
     private readonly FunctionsPool _functionsPool = new();
     private readonly object?[] _params = new object?[32];
     private readonly int[] _recursionStack = new int[RecursionSize];
+    private int _rp; // recursion pointer
 
     public Dictionary<int, object?> Constants = new(64);
     public FunctionFrame CurrentFunctionFrame;
     public InstructionName[] InstructionsArray = new InstructionName[DefaultProgramSize];
 
     public int Ip; // instruction pointer
-    public int Rp; // recursion pointer
 
     public VmMemory()
     {
@@ -60,7 +60,7 @@ public record VmMemory
 
     public void OnCallingFunction(string funcName, int paramsCount)
     {
-        _recursionStack[Rp++] = Ip + 2;
+        _recursionStack[_rp++] = Ip + 1;
 
         for (int i = 0; i < paramsCount; i++) _params[i] = Pop();
         CurrentFunctionFrame = _functionsPool.GetNewFunction(funcName);
@@ -70,18 +70,13 @@ public record VmMemory
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void OnFunctionExit()
     {
-        Ip = _recursionStack[--Rp];
+        Ip = _recursionStack[--_rp];
 
         object? returnObject = CurrentFunctionFrame.Sp != 0 ? Pop() : null;
 
         CurrentFunctionFrame = _functionsPool.FreeFunction();
 
         Push(returnObject);
-    }
-
-    public void Drop()
-    {
-        CurrentFunctionFrame.Sp--;
     }
 
     public List<FunctionFrame> GetFunctionsFramesTrace()

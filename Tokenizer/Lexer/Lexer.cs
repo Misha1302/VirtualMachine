@@ -55,6 +55,8 @@ public static class Lexer
         { "else", TokenType.Else },
         { "func", TokenType.Func },
         { "return", TokenType.Return },
+        { "try", TokenType.Try },
+        { "failed", TokenType.Failed },
 
         { "is not", TokenType.IsNotEquals },
         { "is", TokenType.IsEquals },

@@ -201,11 +201,17 @@ public class VmCompiler
                 case TokenType.Modulo:
                     _image.WriteNextOperation(InstructionName.Modulo);
                     break;
+                case TokenType.Failed:
+                    CompileFailed();
+                    break;
                 case TokenType.Increase:
                     _image.WriteNextOperation(InstructionName.Increase, IdManager.MakeHashCode(_tokens[_i - 1].Text));
                     break;
                 case TokenType.Decrease:
                     _image.WriteNextOperation(InstructionName.Decrease, IdManager.MakeHashCode(_tokens[_i - 1].Text));
+                    break;
+                case TokenType.Try:
+                    CompileTry();
                     break;
                 case TokenType.Func:
                 case TokenType.NewLine:
@@ -228,6 +234,33 @@ public class VmCompiler
 
             _i++;
         }
+    }
+
+    private void CompileTry()
+    {
+        int constantPtr = _image.Ip;
+        _image.WriteNextConstant((decimal)-1, constantPtr);
+        _image.WriteNextOperation(InstructionName.PushFailed);
+
+        _i++;
+        CompileNextBlock(TokenType.Failed);
+        _image.ReplaceConstant(constantPtr, (decimal)_image.Ip);
+        CompileFailed();
+    }
+
+    private void CompileFailed()
+    {
+        int constantPtr = _image.Ip;
+        _image.WriteNextConstant((decimal)-1, constantPtr);
+        _image.WriteNextOperation(InstructionName.Jump);
+
+        _image.CreateVariable("error");
+        _image.SetVariable("error");
+
+        _i++;
+        CompileNextBlock(TokenType.End);
+
+        _image.ReplaceConstant(constantPtr, (decimal)_image.Ip - 1);
     }
 
     private void CompileNewStructure()

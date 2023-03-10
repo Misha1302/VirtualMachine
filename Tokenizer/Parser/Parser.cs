@@ -1,7 +1,6 @@
 ﻿namespace Tokenizer.Parser;
 
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Tokenizer.Lexer;
 using Tokenizer.Token;
 using VirtualMachine;
@@ -19,25 +18,57 @@ public static class Parser
         tokens = tokens.Where(x =>
             x.TokenType is not TokenType.WhiteSpace and not TokenType.Comment and not TokenType.AtSign).ToList();
 
+        tokens.InsertRange(0, new[] { new Token(TokenType.Var, "var"), new Token(TokenType.Unknown, "_") });
+
         ImportMethods(tokens, mainLibPath);
         DetectEntities(tokens);
         SetPartOfExpression(tokens);
         PrepareFunctionsAndMethods(ref tokens);
-        PrepareStructuresFields(tokens);
+        PrepareStructuresFieldsAndMethods(tokens);
         PrecompileExpressions(tokens);
 
         assemblyManager = _assemblyManager;
         return tokens;
     }
 
-    private static void PrepareStructuresFields(List<Token> tokens)
+    private static void PrepareStructuresFieldsAndMethods(List<Token> tokens)
     {
         for (int i = 1; i < tokens.Count; i++)
             if (tokens[i].TokenType == TokenType.Dot)
-            {
-                tokens[i - 1].ExtraInfo.Params.Add(tokens[i + 1]);
-                tokens.RemoveRange(i, 2);
-            }
+                if (tokens[i + 1].TokenType != TokenType.OpenParentheses)
+                {
+                    tokens[i - 1].ExtraInfo.Params.Add(tokens[i + 1]);
+                    tokens.RemoveRange(i, 2);
+                }
+                else
+                {
+                    Token token = tokens[i - 1];
+                    int nestingLevel = 0;
+                    int start = i;
+                    do
+                    {
+                        i++;
+                        switch (tokens[i].TokenType)
+                        {
+                            case TokenType.CloseParentheses:
+                                nestingLevel--;
+                                break;
+                            case TokenType.OpenParentheses:
+                                nestingLevel++;
+                                break;
+                        }
+
+                        token.ExtraInfo.Params.Add(tokens[i]);
+                    } while (nestingLevel != 0);
+
+                    i++;
+                    token.ExtraInfo.Params.Add(tokens[i]);
+                    token.ExtraInfo.Params.Insert(1, new Token(token.TokenType, token.Text));
+                    token.ExtraInfo.Params.Insert(2, new Token(TokenType.Comma, ","));
+
+                    tokens.RemoveRange(start, i - start + 1);
+                    i = start;
+                }
     }
 
     private static void DetectEntities(IReadOnlyList<Token> tokens)
@@ -239,7 +270,19 @@ public static class Parser
 
     private static bool IsCorrectName(IReadOnlyList<Token> tokens, int i)
     {
-        return Regex.IsMatch(tokens[i].Text, "[_a-zA-Z][_a-zA-Z0-9]*");
+        string text = tokens[i].Text;
+        char c = text[0];
+        if (c is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or '_')) return false;
+
+        for (int j = 1; j < text.Length; j++)
+        {
+            c = text[j];
+
+            // ReSharper disable twice MergeIntoPattern
+            if (c is not (>= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9' or '_')) return false;
+        }
+
+        return true;
     }
 
     private static void DetectFunctions(IReadOnlyList<Token> tokens)
@@ -265,12 +308,10 @@ public static class Parser
         for (int i = 0; i < tokens.Count; i++)
             if (tokens[i].TokenType == TokenType.Import)
             {
-                string methodName = tokens[i + 2].Text;
                 string libPath = tokens[i + 1].Text;
 
-                if (methodName == "*") ImportAllMethodsFromLibrary(libPath);
-                else _assemblyManager.ImportMethodFromAssembly(Path.GetFullPath(libPath), methodName);
-                i += 2;
+                ImportAllMethodsFromLibrary(libPath);
+                i++;
             }
 
 
@@ -287,8 +328,10 @@ public static class Parser
 
     private static void ImportAllMethodsFromLibrary(string libPath)
     {
+        const string defaultLibsPath = @"C:\VirtualMachine\Libs";
         string assemblyFile = Path.GetFullPath(libPath);
-        if (!File.Exists(assemblyFile)) assemblyFile = @"C:\VirtualMachine\Libs\" + libPath;
+        if (!File.Exists(assemblyFile)) assemblyFile = Path.Combine(defaultLibsPath, libPath);
+
         if (!File.Exists(assemblyFile)) throw new InvalidOperationException($"library {libPath} was not found");
 
         Assembly assembly = Assembly.LoadFrom(assemblyFile);
@@ -297,12 +340,12 @@ public static class Parser
             .Where(x =>
             {
                 ParameterInfo[] parameters = x.GetParameters();
-                if (parameters.Length == 0) return false;
-                return parameters[0].ParameterType == typeof(VmRuntime);
+                if (parameters.Length != 2) return false;
+                return parameters[0].ParameterType == typeof(VmRuntime) && parameters[1].ParameterType == typeof(int);
             });
 
         foreach (MethodInfo method in methods)
-            _assemblyManager.ImportMethodFromAssembly(libPath, method.Name);
+            _assemblyManager.ImportMethod(method);
     }
 
     private static void DetectMethods(IEnumerable<Token> tokens)

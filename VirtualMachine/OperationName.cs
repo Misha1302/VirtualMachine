@@ -33,5 +33,8 @@ public enum InstructionName : byte
     And,
     PushField,
     SetField,
-    Modulo
+    Modulo,
+    Increase,
+    Decrease,
+    NotEquals
 }

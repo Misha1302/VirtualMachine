@@ -9,7 +9,9 @@ public class VmCompiler
 {
     private readonly Dictionary<string, List<string>> _functions = new();
     private readonly VmImage _image;
+
     private readonly Dictionary<string, List<string>> _structures = new();
+
     private int _i;
     private string _labelName = "label0";
     private List<Token> _tokens = new();
@@ -63,7 +65,7 @@ public class VmCompiler
         }
     }
 
-    private void CompileMethod()
+    private void CompileCallMethod()
     {
         Token methodToken = _tokens[_i];
         _image.CallForeignMethod(methodToken.Text, methodToken.ExtraInfo.ArgsCount);
@@ -109,8 +111,21 @@ public class VmCompiler
 
             TokenType nextToken = _i + 1 != _tokens.Count ? _tokens[_i + 1].TokenType : default;
 
+            List<Token> extraInfoParams = _tokens[_i].ExtraInfo.Params;
             switch (_tokens[_i].TokenType)
             {
+                case TokenType.Variable when extraInfoParams.Any(x => x.TokenType == TokenType.Function):
+                    List<Token> tokensCopy = _tokens;
+                    int iCopy = _i;
+
+                    _i = 0;
+                    extraInfoParams.Add(new Token(TokenType.Eof, "\0"));
+                    _tokens = extraInfoParams;
+                    CompileNextBlock(TokenType.Eof);
+
+                    _tokens = tokensCopy;
+                    _i = iCopy;
+                    break;
                 case TokenType.Variable when CanLoadVariable(nextToken):
                     CompileLoadVariable();
                     break;
@@ -130,8 +145,7 @@ public class VmCompiler
                     _image.WriteNextOperation(InstructionName.Not);
                     break;
                 case TokenType.IsNotEquals:
-                    _image.WriteNextOperation(InstructionName.Equals);
-                    _image.WriteNextOperation(InstructionName.Not);
+                    _image.WriteNextOperation(InstructionName.NotEquals);
                     break;
                 case TokenType.Structure:
                     CompileNewStructure();
@@ -170,7 +184,7 @@ public class VmCompiler
                     _image.WriteNextOperation(InstructionName.Divide);
                     break;
                 case TokenType.ForeignMethod:
-                    CompileMethod();
+                    CompileCallMethod();
                     break;
                 case TokenType.NewFunction:
                     CompileNewFunction();
@@ -184,8 +198,14 @@ public class VmCompiler
                 case TokenType.Loop:
                     CompileLoop();
                     break;
-                case TokenType.Struct:
-                    PassTokensBeforeNext(TokenType.End);
+                case TokenType.Modulo:
+                    _image.WriteNextOperation(InstructionName.Modulo);
+                    break;
+                case TokenType.Increase:
+                    _image.WriteNextOperation(InstructionName.Increase, IdManager.MakeHashCode(_tokens[_i - 1].Text));
+                    break;
+                case TokenType.Decrease:
+                    _image.WriteNextOperation(InstructionName.Decrease, IdManager.MakeHashCode(_tokens[_i - 1].Text));
                     break;
                 case TokenType.Func:
                 case TokenType.NewLine:
@@ -200,15 +220,8 @@ public class VmCompiler
                     break;
                 default:
                     Token token = _tokens[_i];
-                    switch (token.TokenType)
-                    {
-                        case TokenType.Variable:
-                            if (CanLoadVariable(nextToken))
-                                throw new Exception($"Unexpected token {token}");
-                            break;
-                        default:
-                            throw new Exception($"Unexpected token {token}");
-                    }
+                    if (token.TokenType != TokenType.Variable) throw new Exception($"Unexpected token {token}");
+                    if (CanLoadVariable(nextToken)) throw new Exception($"Unexpected token {token}");
 
                     break;
             }
@@ -220,7 +233,7 @@ public class VmCompiler
     private void CompileNewStructure()
     {
         string structName = _tokens[_i].Text;
-        Structure newStructure = new(_structures[structName]);
+        VmStruct newStructure = new(_structures[structName]);
         _image.WriteNextOperation(InstructionName.PushConstant, newStructure);
     }
 
@@ -229,11 +242,10 @@ public class VmCompiler
         _image.LoadVariable(_tokens[_i].Text);
 
         List<Token> extraInfoParams = _tokens[_i].ExtraInfo.Params;
-        if (extraInfoParams.Count != 0)
-        {
-            int paramId = IdManager.MakeHashCode(extraInfoParams[0].Text);
-            _image.WriteNextOperation(InstructionName.PushField, paramId);
-        }
+        if (extraInfoParams.Count == 0) return;
+
+        int paramId = IdManager.MakeHashCode(extraInfoParams[0].Text);
+        _image.WriteNextOperation(InstructionName.PushField, paramId);
     }
 
     private void CompileReturn()
@@ -247,12 +259,11 @@ public class VmCompiler
     private void CompileCallFunction()
     {
         string methodName = _tokens[_i].Text;
-        _image.Call(methodName, _functions[methodName].Count);
+        _image.CallFunction(methodName, _functions[methodName].Count);
     }
 
     private void CompileNewFunction()
     {
-        // string methodName = PrepareNewFunction(out List<string> parameters);
         string funcName = _tokens[_i].Text;
         PassTokensBeforeNext(TokenType.CloseParentheses);
         _image.CreateFunction(funcName, _functions[funcName].ToArray(), () => { CompileNextBlock(TokenType.End); });
@@ -284,16 +295,26 @@ public class VmCompiler
 
         List<string> entities = new();
 
+        int startIndex = _i;
         while (_tokens[++_i].TokenType != TokenType.End)
-            if (_tokens[_i].TokenType == TokenType.NewVariable)
-                entities.Add(_tokens[_i].Text);
+            switch (_tokens[_i].TokenType)
+            {
+                case TokenType.NewVariable:
+                    entities.Add(_tokens[_i].Text);
+                    break;
+                case TokenType.NewFunction:
+                    CompileNewFunction();
+                    break;
+            }
+
+        _tokens.RemoveRange(startIndex - 1, _i - startIndex + 2);
 
         _structures.Add(structName, entities);
     }
 
     private static bool CanLoadVariable(TokenType nextToken)
     {
-        return nextToken is not TokenType.EqualsSign;
+        return nextToken is not TokenType.EqualsSign and not TokenType.Increase and not TokenType.Decrease;
     }
 
     private void CompileElse()

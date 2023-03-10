@@ -3,33 +3,33 @@
 using System.Runtime.InteropServices;
 using global::VirtualMachine.Variables;
 
-public class Structure
+public class VmStruct
 {
-    private readonly Dictionary<int, Field> _values = new();
+    private readonly Dictionary<int, StructField> _structFields = new();
 
-    public Structure(List<string> fieldsNames)
+    public VmStruct(List<string> structFields)
     {
-        foreach (string fieldName in fieldsNames)
-            _values.Add(IdManager.MakeHashCode(fieldName), new Field(fieldName));
+        foreach (string fieldName in structFields)
+            _structFields.Add(IdManager.MakeHashCode(fieldName), new StructField(fieldName));
     }
 
     public void SetValue(int id, object? obj)
     {
-        CollectionsMarshal.GetValueRefOrNullRef(_values, id).FieldValue = obj;
+        CollectionsMarshal.GetValueRefOrNullRef(_structFields, id).FieldValue = obj;
     }
 
     public object? GetValue(int id)
     {
-        return CollectionsMarshal.GetValueRefOrNullRef(_values, id).FieldValue;
+        return CollectionsMarshal.GetValueRefOrNullRef(_structFields, id).FieldValue;
     }
 
     public override string ToString()
     {
-        return "{ " + string.Join(", ", _values.Select(x => x.Value.ToString())) + " }";
+        return "{ " + string.Join(", ", _structFields.Select(x => x.Value.ToString())) + " }";
     }
 
 
-    private record Field(string Name)
+    private record StructField(string Name)
     {
         public readonly string Name = Name;
         public object? FieldValue;

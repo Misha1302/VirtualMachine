@@ -2,34 +2,36 @@
 
 public class FunctionsPool
 {
-    private readonly List<FunctionFrame> _functionFramesTrace = new();
+    private readonly FunctionFrame[] _functionFramesTrace;
     private readonly FunctionFrame[] _pool;
-    private int _pointer;
+    private int _framesTracePointer;
+    private int _poolPointer;
 
-    public FunctionsPool(int maxRecursion = 8192)
+    public FunctionsPool(int maxRecursion = 1024)
     {
-        List<FunctionFrame> poolList = new();
-        for (int i = 0; i < maxRecursion; i++) poolList.Add(new FunctionFrame());
-        _pool = poolList.ToArray();
+        _pool = new FunctionFrame[maxRecursion];
+        for (int i = 0; i < maxRecursion; i++) _pool[i] = new FunctionFrame();
+
+        _functionFramesTrace = new FunctionFrame[maxRecursion];
     }
 
     public FunctionFrame GetNewFunction(string name)
     {
-        FunctionFrame functionFrame = _pool[_pointer++];
+        FunctionFrame functionFrame = _pool[_poolPointer++];
         functionFrame.FuncName = name;
-        _functionFramesTrace.Add(functionFrame);
+        _functionFramesTrace[_framesTracePointer++] = functionFrame;
         return functionFrame;
     }
 
     public FunctionFrame FreeFunction()
     {
-        _functionFramesTrace.RemoveAt(_functionFramesTrace.Count - 1);
-        _pointer--;
-        return _functionFramesTrace[^1];
+        _poolPointer--;
+        _framesTracePointer--;
+        return _functionFramesTrace[_framesTracePointer - 1];
     }
 
     public List<FunctionFrame> GetTrace()
     {
-        return _functionFramesTrace;
+        return _functionFramesTrace[.._framesTracePointer].ToList();
     }
 }

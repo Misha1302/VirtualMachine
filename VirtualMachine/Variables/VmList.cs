@@ -52,11 +52,10 @@ public class VmList : IEnumerable<object?>, ICloneable, IEquatable<VmList>
     public bool Equals(VmList? other)
     {
         if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return Len == other.Len && _array[Len..].SequenceEqual(other._array[other.Len..]);
+        return ReferenceEquals(this, other) || _array[..Len].SequenceEqual(other._array[..other.Len]);
     }
 
-    public void SetElement(int index, object? obj)
+    private void SetElement(int index, object? obj)
     {
         if (index > Len) Len = index;
         index--;
@@ -105,12 +104,12 @@ public class VmList : IEnumerable<object?>, ICloneable, IEquatable<VmList>
     {
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != GetType()) return false;
-        return Equals((VmList)obj);
+        return obj.GetType() == GetType() && Equals((VmList)obj);
     }
 
     public override int GetHashCode()
     {
+        // ReSharper disable NonReadonlyMemberInGetHashCode
         return HashCode.Combine(_array, Len);
     }
 }

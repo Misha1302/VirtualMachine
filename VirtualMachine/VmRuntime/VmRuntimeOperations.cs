@@ -8,20 +8,14 @@ using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
+    private static readonly object _one = 1m;
+    private static readonly object _zero = 0m;
+
     private void Not()
     {
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
-        switch (obj)
-        {
-            case decimal d:
-                Memory.Push(d == 0 ? 1m : 0m);
-                break;
-            case bool b:
-                Memory.Push(!b ? 1m : 0m);
-                break;
-            default:
-                throw new StrongTypingException();
-        }
+        if (obj is decimal d) Memory.Push(d == 0 ? _one : _zero);
+        else throw new StrongTypingException();
     }
 
 
@@ -30,22 +24,15 @@ public partial class VmRuntime
         object? a = Memory.Pop();
         object? b = Memory.Pop();
 
-        if (a is null || b is null)
-        {
-            Memory.Push(null);
-            return;
-        }
-
         switch (a)
         {
             case decimal m:
-                Memory.Push(((decimal)b).IsEquals(m) ? 1m : 0m);
-                break;
-            case VmList list:
-                Memory.Push(((VmList)b).Equals(list) ? 1m : 0m);
+                bool isEquals = decimal.Round(m, Decimals) ==
+                                decimal.Round((decimal)(b ?? throw new InvalidOperationException()), Decimals);
+                Memory.Push(isEquals ? _one : _zero);
                 break;
             default:
-                Memory.Push(a.Equals(b) ? 1m : 0m);
+                Memory.Push(a != null && a.Equals(b) ? _one : _zero);
                 break;
         }
     }
@@ -95,17 +82,9 @@ public partial class VmRuntime
     {
         ReadTwoValues(out object? a, out object? b);
 
-        switch (a)
-        {
-            case decimal m:
-                Memory.Push(m - (decimal)(b ?? throw new InvalidOperationException()));
-                break;
-            case string s:
-                Memory.Push(s.Replace((string)(b ?? string.Empty), ""));
-                break;
-            default:
-                throw new StrongTypingException();
-        }
+        decimal obj0 = (decimal)(a ?? throw new InvalidOperationException());
+        decimal obj1 = (decimal)(b ?? throw new InvalidOperationException());
+        Memory.Push(obj0 - obj1);
     }
 
 
@@ -116,9 +95,31 @@ public partial class VmRuntime
     }
 
 
+    private void Increase()
+    {
+        VmVariable variable =
+            Memory.FindVariableById((int)(decimal)(GetConstant() ?? throw new InvalidOperationException()));
+        variable.VariableValue = (decimal)(variable.VariableValue ?? throw new InvalidOperationException()) + 1;
+    }
+
+
+    private void Decrease()
+    {
+        VmVariable variable =
+            Memory.FindVariableById((int)(decimal)(GetConstant() ?? throw new InvalidOperationException()));
+        variable.VariableValue = (decimal)(variable.VariableValue ?? throw new InvalidOperationException()) - 1;
+    }
+
+
     private void Add()
     {
         ReadTwoValues(out object? a, out object? b);
+
+        if (b is string)
+        {
+            Memory.Push(ObjectToString(a) + b);
+            return;
+        }
 
         switch (a)
         {
@@ -163,12 +164,11 @@ public partial class VmRuntime
     private void CallMethod()
     {
         object[] memoryConstant = (object[])(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
-        int index = (int)memoryConstant[0];
+        AssemblyManager.CallingDelegate method = (AssemblyManager.CallingDelegate)memoryConstant[0];
         int countOfArgs = (int)memoryConstant[1];
 
-        _assemblyManager.GetMethodByIndex(index).Invoke(this, countOfArgs);
+        method.Invoke(this, countOfArgs);
     }
-
 
     private void JumpIfNotZero()
     {
@@ -176,14 +176,14 @@ public partial class VmRuntime
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
         switch (obj)
         {
-            case decimal d when !d.IsEquals(0):
+            case decimal d when d != 0:
             case true:
-                Jump(ip);
+                JumpInternal(ip);
                 break;
         }
     }
 
-    private void Jump(int ip)
+    private void JumpInternal(int ip)
     {
         Memory.Ip = ip;
     }
@@ -194,21 +194,21 @@ public partial class VmRuntime
         int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
         object obj = Memory.Pop() ?? throw new InvalidOperationException();
 
-        if (((decimal)obj).IsEquals(0)) Jump(ip);
+        if ((decimal)obj == 0) JumpInternal(ip);
     }
 
 
     private void LessThan()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Push(a < b ? 1m : 0m);
+        Memory.Push(a < b ? _one : _zero);
     }
 
 
     private void GreatThan()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Push(a > b ? 1m : 0m);
+        Memory.Push(a > b ? _one : _zero);
     }
 
 
@@ -230,35 +230,33 @@ public partial class VmRuntime
 
     private void Halt()
     {
-        Memory.Ip = Memory.InstructionsArray.Length + 1;
+        Memory.Ip = int.MinValue;
     }
 
 
     private void Jump()
     {
         int ip = (int)(decimal)(Memory.Pop() ?? throw new InvalidOperationException());
-        Jump(ip);
+        JumpInternal(ip);
     }
 
 
     private void CreateVariable()
     {
         VmVariable variable = (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
-        int variableId = variable.Id;
-
-        // ReSharper disable once ForCanBeConvertedToForeach
-        // ReSharper disable once LoopCanBeConvertedToQuery
-        for (int index = Memory.CurrentFunctionFrame.Vp - 1; index >= 0; index--)
-            if (Memory.CurrentFunctionFrame.Variables[index].Id == variableId)
-                return;
-
+        if (Memory.CurrentFunctionFrame.Variables.ContainsKey(variable.Id)) return;
         Memory.CreateVariable(new VmVariable(variable.Name));
     }
 
 
     private void PushConstant()
     {
-        Memory.Push(CollectionsMarshal.GetValueRefOrNullRef(Memory.Constants, Memory.Ip));
+        Memory.Push(GetConstant());
+    }
+
+    private object? GetConstant()
+    {
+        return CollectionsMarshal.GetValueRefOrNullRef(Memory.Constants, Memory.Ip);
     }
 
 
@@ -284,18 +282,18 @@ public partial class VmRuntime
     private void Or()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Push(a == 1 || b == 1 ? 1m : 0m);
+        Memory.Push(a == 1 || b == 1 ? _one : _zero);
     }
 
     private void And()
     {
         ReadTwoNumbers(out decimal a, out decimal b);
-        Memory.Push(a == 1 && b == 1 ? 1m : 0m);
+        Memory.Push(a == 1 && b == 1 ? _one : _zero);
     }
 
     private void PushField()
     {
-        Structure structure = (Structure)(Memory.Pop() ?? throw new InvalidOperationException());
+        VmStruct structure = (VmStruct)(Memory.Pop() ?? throw new InvalidOperationException());
         int fieldId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
 
         Memory.Push(structure.GetValue(fieldId));
@@ -303,10 +301,28 @@ public partial class VmRuntime
 
     private void SetField()
     {
-        Structure structure = (Structure)(Memory.Pop() ?? throw new InvalidOperationException());
+        VmStruct structure = (VmStruct)(Memory.Pop() ?? throw new InvalidOperationException());
         int fieldId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
         object? value = Memory.Pop();
 
         structure.SetValue(fieldId, value);
+    }
+
+    private void NotEquals()
+    {
+        object? a = Memory.Pop();
+        object? b = Memory.Pop();
+
+        switch (a)
+        {
+            case decimal m:
+                bool isEquals = decimal.Round(m, Decimals) ==
+                                decimal.Round((decimal)(b ?? throw new InvalidOperationException()), Decimals);
+                Memory.Push(isEquals ? _zero : _one);
+                break;
+            default:
+                Memory.Push(a != null && a.Equals(b) ? _zero : _one);
+                break;
+        }
     }
 }

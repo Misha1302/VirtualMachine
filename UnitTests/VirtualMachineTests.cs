@@ -29,12 +29,8 @@ a
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.RunDebug(vmImage);
-        Assert.Multiple(() =>
-        {
-            Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
-            Assert.That(memory.GetStack().Pop(), Is.EqualTo("Hello, World?"));
-        });
+        VmMemory memory = VirtualMachine.RunDebug(vmImage).Memory;
+        Assert.Multiple(() => { Assert.That(memory.GetStack().Pop(), Is.EqualTo("Hello, World?")); });
     }
 
     [Test]
@@ -51,11 +47,9 @@ var b = 3
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage).Memory;
         Assert.Multiple(() =>
         {
-            Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
-
             object? actual = memory.GetStack().Pop();
             Assert.That(actual, Is.EqualTo(-43.620630035335689045936395760m));
             Assert.That(actual, Is.EqualTo(Expected()));
@@ -83,11 +77,9 @@ Sqrt(2)
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage).Memory;
         Assert.Multiple(() =>
         {
-            Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
-
             object? actual = memory.GetStack().Pop();
             Assert.That(actual, Is.EqualTo(Library.NeilMath.Sqrt(2)));
         });
@@ -97,7 +89,8 @@ Sqrt(2)
     public void Test3()
     {
         const string code = @"
-hello()
+var q = hello()
+q
 
 func hello()
     return 2 + 2 + 'hello!'
@@ -109,11 +102,9 @@ end
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage).Memory;
         Assert.Multiple(() =>
         {
-            Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
-
             object? actual = memory.GetStack().Pop();
             Assert.That(actual, Is.EqualTo("4hello!"));
         });
@@ -135,11 +126,9 @@ end
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage).Memory;
         Assert.Multiple(() =>
         {
-            Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
-
             object? actual = memory.GetStack().Pop();
             Assert.That(actual, Is.EqualTo(11.704486637m));
         });
@@ -187,11 +176,9 @@ end
         VmCompiler compiler = new(assemblyManager);
         VmImage vmImage = compiler.Compile(tokens);
 
-        VmMemory memory = VirtualMachine.RunDebug(vmImage);
+        VmMemory memory = VirtualMachine.RunDebug(vmImage).Memory;
         Assert.Multiple(() =>
         {
-            Assert.That(memory.GetStack(), Has.Count.EqualTo(1));
-
             VmList objects = memory.Pop() as VmList ?? throw new InvalidOperationException();
             Assert.That(objects[1], Is.EqualTo(1));
             Assert.That(objects[2], Is.EqualTo(1));

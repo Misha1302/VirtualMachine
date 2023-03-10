@@ -21,6 +21,8 @@ public static class Lexer
         { ")", TokenType.CloseParentheses },
 
         { "+", TokenType.Plus },
+        { "++", TokenType.Increase },
+        { "--", TokenType.Decrease },
         { "-", TokenType.Minus },
         { "*", TokenType.Multiply },
         { "/", TokenType.Divide },
@@ -125,12 +127,18 @@ public static class Lexer
             return ReturnWordOrSymbol(symbol);
 
         bool canWord = PreviousTokenIsDelimiter();
-        if (canWord && trimmedCode.StartsWithAny(_sortedWords, out KeyValuePair<string, TokenType> word) &&
-            !Regex.IsMatch(_code[_position + word.Key.Length].ToString(), "[a-zA-Z_]"))
+        bool startsWithAny = trimmedCode.StartsWithAny(_sortedWords, out KeyValuePair<string, TokenType> word);
+        if (canWord && startsWithAny && !IsCorrectChar(_code[_position + word.Key.Length]))
             return ReturnWordOrSymbol(word);
 
 
         return new Token(TokenType.Unknown, _code[_position++].ToString());
+    }
+
+    private static bool IsCorrectChar(char ch)
+    {
+        // ReSharper disable once MergeIntoPattern
+        return (ch is >= 'A' and <= 'Z' && ch is >= 'a' and <= 'z') || ch == '_';
     }
 
     private static bool PreviousTokenIsDelimiter()
@@ -187,26 +195,21 @@ public static class Lexer
     {
         _position++;
         int startOfStringIndex = _position;
-        int endOfStringIndex = Regex.Match(_code[_position..], "(?<!(\\\\))'").Index + startOfStringIndex;
+        int endOfStringIndex = FindEndOfString(_code, _position);
 
         string str = _code[startOfStringIndex..endOfStringIndex];
         _position += str.Length + 1;
-        if (isNormalString) str = NormalizeString(str);
+        if (isNormalString) str = Regex.Unescape(str);
         return new Token(TokenType.String, str, str);
     }
 
-    private static string NormalizeString(string str)
+    private static int FindEndOfString(string code, int position)
     {
-        IReadOnlyDictionary<string, string> dict = new Dictionary<string, string>
+        while (true)
         {
-            { "(?<!(\\\\))\\\\t", "\t" },
-            { "(?<!(\\\\))\\\\v", "\v" },
-            { "(?<!(\\\\))\\\\r", "\r" },
-            { "(?<!(\\\\))\\\\n", "\n" },
-            { "(?<!(\\\\))\\\\b", "\b" },
-            { "(?<!(\\\\))\\\\0", "\0" }
-        };
-
-        return dict.Aggregate(str, (current, pair) => Regex.Replace(current, pair.Key, pair.Value));
+            if (code[++position] != StringCharacter) continue;
+            if (code[position - 1] != '\\' || (code[position - 1] == '\\' && code[position - 2] == '\\'))
+                return position;
+        }
     }
 }

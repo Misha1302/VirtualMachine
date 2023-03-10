@@ -1,16 +1,16 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
 using System.Globalization;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
-    private AssemblyManager _assemblyManager;
-    private List<Instruction>? _instructions;
+    private const int Decimals = 23;
+    private static readonly string _numberFormat = "0." + new string('#', 20);
 
+    private List<Instruction>? _instructions;
     private Dictionary<int, int> _pointersToInsertVariables = new(64);
     public VmMemory Memory;
 
@@ -19,18 +19,6 @@ public partial class VmRuntime
     public VmRuntime()
     {
         Memory = new VmMemory();
-        _assemblyManager = new AssemblyManager();
-
-        PrepareInstructionsForExecution();
-    }
-
-    private static void PrepareInstructionsForExecution()
-    {
-        MethodInfo[] handles = typeof(VmRuntime).GetMethods(
-            BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-        foreach (MethodInfo handle in handles)
-            RuntimeHelpers.PrepareMethod(handle.MethodHandle);
     }
 
     public void Run()
@@ -40,9 +28,7 @@ public partial class VmRuntime
 
     private void Execute(IReadOnlyList<Instruction> instructionsReadonlyList)
     {
-#pragma warning disable CS8321
         void LogExtraInfo(ReadOnlySpan<Instruction> instructions)
-#pragma warning restore CS8321
         {
             Console.Write(instructions[Memory.Ip].Method.Name);
             if (Memory.Constants.TryGetValue(Memory.Ip, out object? value))
@@ -50,33 +36,16 @@ public partial class VmRuntime
             Console.WriteLine();
         }
 
-
-#if DEBUG
-        List<string> unused = instructionsReadonlyList.Select(x => x.Method.Name).ToList();
-        StringBuilder stringBuilder = new();
-
-        for (int index = 0; index < unused.Count; index++)
-        {
-            string item = unused[index];
-            stringBuilder.Append($"{index}. {item}");
-            if (Memory.Constants.TryGetValue(index, out object? value))
-                stringBuilder.Append($" - {ObjectToString(value)}");
-            stringBuilder.AppendLine();
-        }
-
-        // ReSharper disable once EmptyStatement
-        ;
-#endif
-
 #if !DEBUG
         try
 #endif
         {
             ReadOnlySpan<Instruction> instructions = new(instructionsReadonlyList.ToArray());
-            int instructionsLength = instructions.Length;
-            for (Memory.Ip = 0; Memory.Ip < instructionsLength; Memory.Ip++)
+            for (Memory.Ip = 0; Memory.Ip >= 0; Memory.Ip++)
+            {
                 // LogExtraInfo(instructions);
                 instructions[Memory.Ip]();
+            }
         }
 #if !DEBUG
         catch (Exception ex)
@@ -127,6 +96,9 @@ public partial class VmRuntime
                 InstructionName.NoOperation => NoOperation,
                 InstructionName.PushField => PushField,
                 InstructionName.SetField => SetField,
+                InstructionName.Increase => Increase,
+                InstructionName.Decrease => Decrease,
+                InstructionName.NotEquals => NotEquals,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);
@@ -144,7 +116,6 @@ public partial class VmRuntime
         Memory = image.GetMemory();
 
         _pointersToInsertVariables = image.GetPointersToInsertVariables();
-        _assemblyManager = image.AssemblyManager;
 
         _instructions = GenerateDictToExecute();
     }
@@ -168,15 +139,15 @@ public partial class VmRuntime
         outputStringBuilder.Append("Variables={");
         outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.Variables.Select(x =>
         {
-            string obj = x.VariableValue switch
+            string obj = x.Value.VariableValue switch
             {
                 string s => $"\"{s}\"",
                 char c => $"\'{c}\'",
                 decimal m => m.ToString(CultureInfo.InvariantCulture).Replace(',', '.'),
-                _ => x.VariableValue?.ToString()
+                _ => x.Value.VariableValue?.ToString()
             } ?? string.Empty;
 
-            return x.Name + "=" + obj;
+            return x.Value.Name + "=" + obj;
         })));
         outputStringBuilder.AppendLine("}");
 
@@ -200,8 +171,10 @@ public partial class VmRuntime
     private void ReadTwoNumbers(out decimal a, out decimal b)
     {
         ReadTwoValues(out object? obj0, out object? obj1);
-        a = decimal.Round((decimal)(obj0 ?? throw new InvalidOperationException()), 23);
-        b = decimal.Round((decimal)(obj1 ?? throw new InvalidOperationException()), 23);
+        // if comparisons occur during subsequent actions, then 0.(9) will be equal to 1
+        // 0.(9) will not be less than/greater than 1
+        a = decimal.Round((decimal)(obj0 ?? throw new InvalidOperationException()), Decimals);
+        b = decimal.Round((decimal)(obj1 ?? throw new InvalidOperationException()), Decimals);
     }
 
     private static string NumberToString(decimal m)
@@ -217,7 +190,8 @@ public partial class VmRuntime
             case null:
                 return empty;
             case decimal i:
-                string objectToString = i.ToString("0." + new string('#', 20), CultureInfo.InvariantCulture);
+                decimal round = decimal.Round(i, 18);
+                string objectToString = round.ToString(_numberFormat, CultureInfo.InvariantCulture);
                 return string.IsNullOrWhiteSpace(objectToString) ? "0" : objectToString;
             case string s:
                 return s;

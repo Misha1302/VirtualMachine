@@ -6,7 +6,7 @@ using System.Globalization;
 public static class VirtualMachine
 {
     private static Stopwatch? _stopwatch;
-    private static volatile int _countOfTasks;
+    private static long _countOfTasks;
     private static bool _programWasExit;
 
     public static void Run(VmImage vmImage)
@@ -25,13 +25,17 @@ public static class VirtualMachine
         WaitLast();
     }
 
-    public static VmMemory RunDebug(VmImage image)
+    public static (long ElapsedMilliseconds, VmMemory Memory) RunDebug(VmImage image)
     {
-        Interlocked.Increment(ref _countOfTasks);
         VmRuntime.VmRuntime runtime = CreateNewRuntime(image);
-        runtime.Run();
 
-        return runtime.Memory;
+        Interlocked.Increment(ref _countOfTasks);
+
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        runtime.Run();
+        stopwatch.Stop();
+
+        return (stopwatch.ElapsedMilliseconds, runtime.Memory);
     }
 
     public static void WaitLast()
@@ -40,6 +44,7 @@ public static class VirtualMachine
             Thread.Sleep(0);
 
         OnProgramExit();
+        _programWasExit = false;
     }
 
     private static void OnProgramExit()

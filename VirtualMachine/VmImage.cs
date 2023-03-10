@@ -4,16 +4,12 @@ using global::VirtualMachine.Variables;
 
 public class VmImage
 {
-    private const int BaseProgramSize = 128;
-
     private readonly List<(string, int)> _goto;
     private readonly Dictionary<string, int> _labels;
     private readonly VmMemory _memory;
     private readonly Dictionary<int, int> _pointersToInsertVariables;
     private readonly List<VmVariable> _variables;
     public readonly AssemblyManager AssemblyManager;
-
-    private int _ip;
 
     public VmImage(AssemblyManager? assemblyManager = null)
     {
@@ -22,30 +18,27 @@ public class VmImage
         _pointersToInsertVariables = new Dictionary<int, int>();
         _labels = new Dictionary<string, int>();
         _goto = new List<(string, int)>();
+        _memory = new VmMemory();
 
-        _memory = new VmMemory
-        {
-            InstructionsArray = new InstructionName[BaseProgramSize],
-            Ip = 0
-        };
-
-        _ip = 0;
+        Ip = 0;
 
         if (assemblyManager is not null) AssemblyManager = assemblyManager;
     }
 
+    public int Ip { get; private set; }
+
     public void WriteNextOperation(InstructionName operation)
     {
-        _memory.InstructionsArray[_ip] = operation;
-        _ip++;
+        _memory.InstructionsArray[Ip] = operation;
+        Ip++;
 
         IncreaseMemArrayIfItNeed();
     }
 
     public void WriteNextOperation(InstructionName operation, params object?[] args)
     {
-        _memory.InstructionsArray[_ip] = operation;
-        _ip++;
+        _memory.InstructionsArray[Ip] = operation;
+        Ip++;
 
         IncreaseMemArrayIfItNeed();
 
@@ -64,14 +57,14 @@ public class VmImage
     private void IncreaseMemArrayIfItNeed()
     {
         int len = _memory.InstructionsArray.Length;
-        if (_ip < len) return;
+        if (Ip < len) return;
         Array.Resize(ref _memory.InstructionsArray, len << 1);
     }
 
 
     private void WriteNextConstant(object? word, int? position = null)
     {
-        int pos = position ?? _ip - 1;
+        int pos = position ?? Ip - 1;
         _memory.Constants.Add(pos, word);
     }
 
@@ -80,8 +73,9 @@ public class VmImage
         Dictionary<int, object?> constants = _memory.Constants.ToDictionary(entry => entry.Key, entry => entry.Value);
         InstructionName[] memArray = (InstructionName[])_memory.InstructionsArray.Clone();
 
+        WriteNextOperation(InstructionName.Halt);
         WriteNextOperation(InstructionName.EndOfProgram);
-        _ip--;
+        Ip--;
         ReplaceGoto();
 
         VmMemory memToReturn = new()
@@ -118,7 +112,7 @@ public class VmImage
         WriteNextOperation(InstructionName.SetVariable, varName);
 
         VmVariable keyValuePair = _variables.First(x => x.Name == varName);
-        _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
+        _pointersToInsertVariables.Add(Ip - 1, keyValuePair.Id);
     }
 
     public void LoadVariable(string varName)
@@ -126,17 +120,17 @@ public class VmImage
         WriteNextOperation(InstructionName.LoadVariable, varName);
 
         VmVariable keyValuePair = _variables.First(x => x.Name == varName);
-        _pointersToInsertVariables.Add(_ip - 1, keyValuePair.Id);
+        _pointersToInsertVariables.Add(Ip - 1, keyValuePair.Id);
     }
 
     public void SetLabel(string label)
     {
-        _labels.Add(label, _ip - 1);
+        _labels.Add(label, Ip - 1);
     }
 
     public void Goto(string label, InstructionName jumpInstruction)
     {
-        _goto.Add((label, _ip));
+        _goto.Add((label, Ip));
         WriteNextOperation(InstructionName.PushConstant);
         WriteNextOperation(jumpInstruction);
     }
@@ -149,7 +143,10 @@ public class VmImage
 
     public void CreateFunction(string name, IEnumerable<string> parameters, Action body)
     {
-        WriteNextOperation(InstructionName.Halt);
+        int constantPtr = Ip;
+        WriteNextConstant((decimal)-1, constantPtr);
+        WriteNextOperation(InstructionName.PushConstant);
+        WriteNextOperation(InstructionName.Jump);
 
         SetLabel(name);
 
@@ -162,9 +159,10 @@ public class VmImage
         body();
 
         WriteNextOperation(InstructionName.Ret);
+        _memory.Constants[constantPtr] = (decimal)Ip - 1;
     }
 
-    public void Call(string funcName, int paramsCount)
+    public void CallFunction(string funcName, int paramsCount)
     {
         WriteNextOperation(InstructionName.PushAddress, funcName, paramsCount);
         Goto(funcName, InstructionName.Jump);
@@ -172,6 +170,9 @@ public class VmImage
 
     public void CallForeignMethod(string name, int argsCount)
     {
-        WriteNextOperation(InstructionName.CallMethod, AssemblyManager.ImportedMethods[name], argsCount);
+        AssemblyManager.CallingDelegate method =
+            AssemblyManager.GetMethodByIndex(AssemblyManager.ImportedMethods[name]);
+
+        WriteNextOperation(InstructionName.CallMethod, method, argsCount);
     }
 }

@@ -1,23 +1,26 @@
 ﻿namespace VirtualMachine;
 
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using global::VirtualMachine.Variables;
 using global::VirtualMachine.VmRuntime;
 
 public record VmMemory
 {
-    private const int RecursionSize = 0xFFFF;
+    private const int DefaultProgramSize = 128;
+    private const int RecursionSize = 1024;
     private const string MainFuncName = "__main__";
 
     private readonly FunctionsPool _functionsPool = new();
     private readonly object?[] _params = new object?[32];
-    private readonly Stack<int> _recursionStack = new(RecursionSize);
+    private readonly int[] _recursionStack = new int[RecursionSize];
 
     public Dictionary<int, object?> Constants = new(64);
     public FunctionFrame CurrentFunctionFrame;
-    public InstructionName[] InstructionsArray = Array.Empty<InstructionName>();
+    public InstructionName[] InstructionsArray = new InstructionName[DefaultProgramSize];
 
     public int Ip; // instruction pointer
+    public int Rp; // recursion pointer
 
     public VmMemory()
     {
@@ -49,21 +52,15 @@ public record VmMemory
         CurrentFunctionFrame.AddVariable(vmVariable);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public VmVariable FindVariableById(int id)
     {
-        for (int i = CurrentFunctionFrame.Vp - 1; i >= 0; i--)
-        {
-            VmVariable findVariableById = CurrentFunctionFrame.Variables[i];
-            if (findVariableById.Id == id)
-                return findVariableById;
-        }
-
-        throw new InvalidOperationException();
+        return CollectionsMarshal.GetValueRefOrNullRef(CurrentFunctionFrame.Variables, id);
     }
 
     public void OnCallingFunction(string funcName, int paramsCount)
     {
-        _recursionStack.Push(Ip + 2);
+        _recursionStack[Rp++] = Ip + 2;
 
         for (int i = 0; i < paramsCount; i++) _params[i] = Pop();
         CurrentFunctionFrame = _functionsPool.GetNewFunction(funcName);
@@ -73,7 +70,7 @@ public record VmMemory
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void OnFunctionExit()
     {
-        Ip = _recursionStack.Pop();
+        Ip = _recursionStack[--Rp];
 
         object? returnObject = CurrentFunctionFrame.Sp != 0 ? Pop() : null;
 

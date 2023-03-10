@@ -24,18 +24,34 @@ public static class Library
     public static void GetElement(VmRuntime vmRuntime, int argsCount)
     {
         int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
-        VmList array = (VmList)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        object obj = vmRuntime.Memory.Pop() ?? throw new InvalidOperationException();
 
-        vmRuntime.Memory.Push(array[index]);
+        vmRuntime.Memory.Push(
+            obj is VmList list
+                ? list[index]
+                : ((string)obj)[index]
+        );
     }
 
     public static void SetElement(VmRuntime vmRuntime, int argsCount)
     {
         object? value = vmRuntime.Memory.Pop();
-        VmList array = (VmList)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        object obj = vmRuntime.Memory.Pop() ?? throw new InvalidOperationException();
         int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
 
-        array[index] = value;
+        if (obj is VmList list)
+            list[index] = value;
+        else
+            vmRuntime.Memory.Push(ReplaceAt((string)obj, index - 1,
+                ((string)(value ?? throw new InvalidOperationException()))[0]));
+
+
+        string ReplaceAt(string input, int charIndex, char newChar)
+        {
+            char[] chars = input.ToCharArray();
+            chars[charIndex] = newChar;
+            return new string(chars);
+        }
     }
 
     public static void CreateArray(VmRuntime vmRuntime, int argsCount)
@@ -96,12 +112,8 @@ public static class Library
                 return;
             }
 
-            if (list[0] is ICloneable)
-                foreach (object? item in list)
-                    newList.AddToEnd(item is not null ? ((ICloneable)item).Clone() : null);
-            else
-                foreach (object? item in list)
-                    newList.AddToEnd(item);
+            foreach (object? item in list)
+                newList.AddToEnd(item);
 
             newList = new VmList(newList.Reverse().ToList());
             vmRuntime.Memory.Push(newList);
@@ -117,7 +129,7 @@ public static class Library
         vmRuntime.Memory.Push(Console.ReadLine());
     }
 
-    public static void StringToNumber(VmRuntime vmRuntime, int argsCount)
+    public static void ToNumber(VmRuntime vmRuntime, int argsCount)
     {
         object memoryARegister = vmRuntime.Memory.Pop() ?? throw new NullReferenceException();
 

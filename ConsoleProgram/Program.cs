@@ -1,19 +1,9 @@
-﻿const string code = """
-loop var i = 0; i < 1_000_000; i = i + 1
+﻿using static ConsoleProgram.ProgramConstants;
 
-end
-""";
+string codePath = args.Length == 0 ? TempCodePath : args[0];
+Console.WriteLine(string.Join(", ", args));
 
+if (!File.Exists(codePath)) File.WriteAllText(codePath, DefaultCode);
+
+string code = File.ReadAllText(codePath);
 VmFacade.VmFacade.Run(code);
-
-#if !DEBUG
-async void WaitAndExit(int timeMs)
-{
-    await Task.Delay(timeMs);
-    Environment.Exit(0);
-}
-
-new Task(() => WaitAndExit(10_000)).Start();
-
-Console.Read();
-#endif

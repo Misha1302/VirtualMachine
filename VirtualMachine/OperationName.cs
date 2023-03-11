@@ -27,8 +27,7 @@ public enum InstructionName : byte
     PushConstant,
     NoOperation,
     GreatThan,
-    Drop,
-
+    
     Or,
     And,
     PushField,
@@ -37,5 +36,6 @@ public enum InstructionName : byte
     Increase,
     Decrease,
     NotEquals,
-    PushFailed
+    PushFailed,
+    JumpToFuncMethod
 }

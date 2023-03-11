@@ -13,14 +13,9 @@ public partial class VmRuntime
 
     private List<Instruction>? _instructions;
     private Dictionary<int, int> _pointersToInsertVariables = new(64);
-    public VmMemory Memory;
+    public VmMemory Memory = default!;
 
     public Action<VmRuntime, Exception?>? OnProgramExit;
-
-    public VmRuntime()
-    {
-        Memory = new VmMemory();
-    }
 
     public void Run()
     {
@@ -44,10 +39,9 @@ public partial class VmRuntime
             try
             {
                 // LogExtraInfo(instructions);
-
                 instructions[Memory.Ip]();
             }
-            catch (DivideByZeroException ex)
+            catch (Exception ex)
             {
                 if (_failedStack.TryPop(out int pointer))
                 {
@@ -105,6 +99,7 @@ public partial class VmRuntime
                 InstructionName.Decrease => Decrease,
                 InstructionName.NotEquals => NotEquals,
                 InstructionName.PushFailed => PushFailed,
+                InstructionName.JumpToFuncMethod => JumpToFuncMethod,
                 _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);

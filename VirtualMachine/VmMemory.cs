@@ -1,5 +1,6 @@
 ﻿namespace VirtualMachine;
 
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using global::VirtualMachine.Variables;
@@ -14,17 +15,24 @@ public record VmMemory
     private readonly FunctionsPool _functionsPool = new();
     private readonly object?[] _params = new object?[32];
     private readonly int[] _recursionStack = new int[RecursionSize];
+    private Dictionary<string, int> _labels = new(64);
     private int _rp; // recursion pointer
-
+    
     public Dictionary<int, object?> Constants = new(64);
     public FunctionFrame CurrentFunctionFrame;
     public InstructionName[] InstructionsArray = new InstructionName[DefaultProgramSize];
 
     public int Ip; // instruction pointer
 
-    public VmMemory()
+    public VmMemory(Dictionary<string, int> labels)
     {
+        _labels = labels;
         CurrentFunctionFrame = _functionsPool.GetNewFunction(MainFuncName);
+    }
+
+    public int GetLabelPointer(string labelName)
+    {
+        return CollectionsMarshal.GetValueRefOrNullRef(_labels, labelName);
     }
 
     public Stack<object?> GetStack()
@@ -58,9 +66,9 @@ public record VmMemory
         return CollectionsMarshal.GetValueRefOrNullRef(CurrentFunctionFrame.Variables, id);
     }
 
-    public void OnCallingFunction(string funcName, int paramsCount)
+    public void OnCallingFunction(string funcName, int paramsCount, int ip)
     {
-        _recursionStack[_rp++] = Ip + 1;
+        _recursionStack[_rp++] = ip;
 
         for (int i = 0; i < paramsCount; i++) _params[i] = Pop();
         CurrentFunctionFrame = _functionsPool.GetNewFunction(funcName);

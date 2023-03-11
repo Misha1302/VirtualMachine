@@ -18,7 +18,7 @@ public class VmImage
         _pointersToInsertVariables = new Dictionary<int, int>();
         _labels = new Dictionary<string, int>();
         _goto = new List<(string, int)>();
-        _memory = new VmMemory();
+        _memory = new VmMemory(_labels);
 
         Ip = 0;
 
@@ -78,10 +78,9 @@ public class VmImage
         Ip--;
         ReplaceGoto();
 
-        VmMemory memToReturn = new()
+        VmMemory memToReturn = new(_labels)
         {
             Constants = _memory.Constants,
-            Ip = 0,
             InstructionsArray = _memory.InstructionsArray
         };
 
@@ -164,6 +163,11 @@ public class VmImage
     {
         WriteNextOperation(InstructionName.PushAddress, funcName, paramsCount);
         Goto(funcName, InstructionName.Jump);
+    }
+
+    public void CallStructFunction(string funcNameFunc, int paramsCount)
+    {
+        WriteNextOperation(InstructionName.JumpToFuncMethod, funcNameFunc, paramsCount);
     }
 
     public void CallForeignMethod(string name, int argsCount)

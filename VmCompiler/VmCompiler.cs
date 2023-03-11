@@ -11,6 +11,7 @@ public class VmCompiler
     private readonly VmImage _image;
 
     private readonly Dictionary<string, List<string>> _structures = new();
+    private string _currentStructName = string.Empty;
 
     private int _i;
     private string _labelName = "label0";
@@ -34,7 +35,34 @@ public class VmCompiler
     {
         for (_i = 0; _i < _tokens.Count; _i++)
             if (_tokens[_i].TokenType == TokenType.NewFunction)
+            {
                 PrepareNewFunction();
+            }
+            else if (_tokens[_i].TokenType == TokenType.NewStruct)
+            {
+                string structName = _tokens[_i].Text;
+                int nestingLevel = 0;
+                do
+                {
+                    switch (_tokens[_i].TokenType)
+                    {
+                        case TokenType.NewStruct:
+                        case TokenType.Func:
+                            nestingLevel++;
+                            break;
+                        case TokenType.End:
+                            nestingLevel--;
+                            break;
+                        case TokenType.NewFunction:
+                            _currentStructName = structName;
+                            PrepareNewFunction();
+                            _currentStructName = string.Empty;
+                            break;
+                    }
+
+                    _i++;
+                } while (nestingLevel != 0);
+            }
 
         for (_i = 0; _i < _tokens.Count; _i++)
             if (_tokens[_i].TokenType == TokenType.NewStruct)
@@ -115,16 +143,7 @@ public class VmCompiler
             switch (_tokens[_i].TokenType)
             {
                 case TokenType.Variable when extraInfoParams.Any(x => x.TokenType == TokenType.Function):
-                    List<Token> tokensCopy = _tokens;
-                    int iCopy = _i;
-
-                    _i = 0;
-                    extraInfoParams.Add(new Token(TokenType.Eof, "\0"));
-                    _tokens = extraInfoParams;
-                    CompileNextBlock(TokenType.Eof);
-
-                    _tokens = tokensCopy;
-                    _i = iCopy;
+                    CompileCallFunctionByStruct();
                     break;
                 case TokenType.Variable when CanLoadVariable(nextToken):
                     CompileLoadVariable();
@@ -183,6 +202,9 @@ public class VmCompiler
                 case TokenType.Divide:
                     _image.WriteNextOperation(InstructionName.Divide);
                     break;
+                case TokenType.FunctionByStruct:
+                    _image.CallStructFunction(_tokens[_i].Text, _tokens[_i].ExtraInfo.ArgsCount);
+                    break;
                 case TokenType.ForeignMethod:
                     CompileCallMethod();
                     break;
@@ -236,6 +258,22 @@ public class VmCompiler
         }
     }
 
+    private void CompileCallFunctionByStruct()
+    {
+        List<Token> tokensCopy = _tokens;
+        int iCopy = _i;
+        _i = 0;
+
+        List<Token> extraInfoParams = _tokens[iCopy].ExtraInfo.Params;
+        extraInfoParams.Add(new Token(TokenType.Eof, "\0"));
+        _tokens = extraInfoParams;
+        if (_tokens[^2].TokenType == TokenType.Function) _tokens[^2].TokenType = TokenType.FunctionByStruct;
+        CompileNextBlock(TokenType.Eof);
+
+        _tokens = tokensCopy;
+        _i = iCopy;
+    }
+
     private void CompileTry()
     {
         int constantPtr = _image.Ip;
@@ -266,7 +304,7 @@ public class VmCompiler
     private void CompileNewStructure()
     {
         string structName = _tokens[_i].Text;
-        VmStruct newStructure = new(_structures[structName]);
+        VmStruct newStructure = new(_structures[structName], structName);
         _image.WriteNextOperation(InstructionName.PushConstant, newStructure);
     }
 
@@ -319,7 +357,7 @@ public class VmCompiler
         } while (token.TokenType != TokenType.CloseParentheses);
 
         _i++;
-        _functions.Add(methodName, parameters);
+        _functions.Add(_currentStructName + methodName, parameters);
     }
 
     private void PrepareNewStructure()
@@ -336,11 +374,15 @@ public class VmCompiler
                     entities.Add(_tokens[_i].Text);
                     break;
                 case TokenType.NewFunction:
-                    CompileNewFunction();
+                    string funcName = structName + _tokens[_i].Text;
+                    PassTokensBeforeNext(TokenType.CloseParentheses);
+                    _image.CreateFunction(funcName, _functions[funcName].ToArray(),
+                        () => { CompileNextBlock(TokenType.End); });
                     break;
             }
 
         _tokens.RemoveRange(startIndex - 1, _i - startIndex + 2);
+        _i = startIndex;
 
         _structures.Add(structName, entities);
     }

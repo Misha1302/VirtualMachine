@@ -7,8 +7,11 @@ public class VmStruct
 {
     private readonly Dictionary<int, StructField> _structFields = new();
 
-    public VmStruct(List<string> structFields)
+    public readonly string Name;
+
+    public VmStruct(List<string> structFields, string name)
     {
+        Name = name;
         foreach (string fieldName in structFields)
             _structFields.Add(IdManager.MakeHashCode(fieldName), new StructField(fieldName));
     }

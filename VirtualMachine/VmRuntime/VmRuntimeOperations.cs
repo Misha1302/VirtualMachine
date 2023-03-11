@@ -218,7 +218,8 @@ public partial class VmRuntime
 
         string funcName = (string)(constants[0] ?? throw new InvalidOperationException());
         int paramsCount = (int)(constants[1] ?? throw new InvalidOperationException());
-        Memory.OnCallingFunction(funcName, paramsCount);
+
+        Memory.OnCallingFunction(funcName, paramsCount, Memory.Ip + 1);
     }
 
 
@@ -323,5 +324,16 @@ public partial class VmRuntime
     private void PushFailed()
     {
         _failedStack.Push((int)(decimal)(GetConstant() ?? throw new InvalidOperationException()));
+    }
+
+    private void JumpToFuncMethod()
+    {
+        object[] constants = (object[])(GetConstant() ?? throw new InvalidOperationException());
+        string funcName = (string)(constants[0] ?? throw new InvalidOperationException());
+        int paramsCount = (int)(constants[1] ?? throw new InvalidOperationException());
+
+        string labelName = ((VmStruct)(Memory.Pop() ?? throw new InvalidOperationException())).Name + funcName;
+        Memory.OnCallingFunction(labelName, paramsCount, Memory.Ip);
+        JumpInternal(Memory.GetLabelPointer(labelName));
     }
 }

@@ -1,4 +1,4 @@
-namespace VirtualMachine.Variables;
+namespace VirtualMachine.Variable;
 
 using System.Runtime.CompilerServices;
 

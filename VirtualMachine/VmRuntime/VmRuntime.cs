@@ -3,7 +3,7 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
-using global::VirtualMachine.Variables;
+using global::VirtualMachine.Variable;
 
 public partial class VmRuntime
 {
@@ -19,7 +19,7 @@ public partial class VmRuntime
 
     public void Run()
     {
-        Execute(_instructions ?? throw new InvalidOperationException());
+        Execute(_instructions ?? throw new VmException());
     }
 
     private void Execute(IEnumerable<Instruction> instructionsEnumerable)
@@ -41,7 +41,7 @@ public partial class VmRuntime
                 // LogExtraInfo(instructions);
                 instructions[Memory.Ip]();
             }
-            catch (Exception ex)
+            catch (VmException ex)
             {
                 if (_failedStack.TryPop(out int pointer))
                 {
@@ -100,7 +100,7 @@ public partial class VmRuntime
                 InstructionName.NotEquals => NotEquals,
                 InstructionName.PushFailed => PushFailed,
                 InstructionName.JumpToFuncMethod => JumpToFuncMethod,
-                _ or 0 => throw new InvalidOperationException($"unknown instruction - {operation}")
+                _ or 0 => throw new VmException($"unknown instruction - {operation}")
             };
             instructions.Add(instr);
 
@@ -138,7 +138,7 @@ public partial class VmRuntime
 
 
         outputStringBuilder.Append("Variables={");
-        outputStringBuilder.Append(string.Join(",", Memory.CurrentFunctionFrame.Variables.Select(x =>
+        outputStringBuilder.Append(string.Join(",", Memory.FunctionsPool.VariablesPool.Variables.Select(x =>
         {
             string obj = x.Value.VariableValue switch
             {
@@ -155,7 +155,7 @@ public partial class VmRuntime
 
         outputStringBuilder.Append("StackTrace={");
         outputStringBuilder.Append(string.Join("->", Memory.GetFunctionsFramesTrace().Select(x =>
-            (x ?? throw new ArgumentNullException(nameof(x))).FuncName)));
+            (x ?? throw new VmException(nameof(x))).FuncName)));
         outputStringBuilder.AppendLine("}");
 
         return outputStringBuilder.ToString();
@@ -174,8 +174,8 @@ public partial class VmRuntime
         ReadTwoValues(out object? obj0, out object? obj1);
         // if comparisons occur during subsequent actions, then 0.(9) will be equal to 1
         // 0.(9) will not be less than/greater than 1
-        a = decimal.Round((decimal)(obj0 ?? throw new InvalidOperationException()), Decimals);
-        b = decimal.Round((decimal)(obj1 ?? throw new InvalidOperationException()), Decimals);
+        a = decimal.Round((decimal)(obj0 ?? throw new VmException()), Decimals);
+        b = decimal.Round((decimal)(obj1 ?? throw new VmException()), Decimals);
     }
 
     private static string NumberToString(decimal m)

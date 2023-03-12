@@ -5,7 +5,8 @@ using Library;
 using Tokenizer.Parser;
 using Tokenizer.Token;
 using VirtualMachine;
-using VirtualMachine.Variables;
+using VirtualMachine.Variable;
+using VirtualMachine.VmRuntime;
 using VmCompiler;
 using VmFacade;
 
@@ -179,7 +180,7 @@ end
         VmMemory memory = VirtualMachine.RunDebug(vmImage).Memory;
         Assert.Multiple(() =>
         {
-            VmList objects = memory.Pop() as VmList ?? throw new InvalidOperationException();
+            VmList objects = memory.Pop() as VmList ?? throw new VmException();
             Assert.That(objects[1], Is.EqualTo(1));
             Assert.That(objects[2], Is.EqualTo(1));
             Assert.That(objects[3], Is.EqualTo(0));

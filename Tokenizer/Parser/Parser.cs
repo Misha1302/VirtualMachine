@@ -336,10 +336,10 @@ public static class Parser
         string assemblyFile = Path.GetFullPath(libPath);
         if (!File.Exists(assemblyFile)) assemblyFile = Path.Combine(defaultLibsPath, libPath);
 
-        if (!File.Exists(assemblyFile)) throw new InvalidOperationException($"library {libPath} was not found");
+        if (!File.Exists(assemblyFile)) throw new VmException($"library {libPath} was not found");
 
         Assembly assembly = Assembly.LoadFrom(assemblyFile);
-        Type @class = assembly.GetType("Library.Library") ?? throw new InvalidOperationException();
+        Type @class = assembly.GetType("Library.Library") ?? throw new VmException();
         IEnumerable<MethodInfo> methods = @class.GetMethods()
             .Where(x =>
             {

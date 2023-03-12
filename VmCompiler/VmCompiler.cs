@@ -2,7 +2,7 @@
 
 using Tokenizer.Token;
 using VirtualMachine;
-using VirtualMachine.Variables;
+using VirtualMachine.Variable;
 using VirtualMachine.VmRuntime;
 
 public class VmCompiler
@@ -248,8 +248,8 @@ public class VmCompiler
                     break;
                 default:
                     Token token = _tokens[_i];
-                    if (token.TokenType != TokenType.Variable) throw new Exception($"Unexpected token {token}");
-                    if (CanLoadVariable(nextToken)) throw new Exception($"Unexpected token {token}");
+                    if (token.TokenType != TokenType.Variable) throw new VmException($"Unexpected token {token}");
+                    if (CanLoadVariable(nextToken)) throw new VmException($"Unexpected token {token}");
 
                     break;
             }

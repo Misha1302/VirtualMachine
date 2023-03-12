@@ -1,8 +1,8 @@
-﻿namespace VirtualMachine.Variables;
+﻿namespace VirtualMachine.Variable;
 
 using System.Collections;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using global::VirtualMachine.VmRuntime;
 
 public class VmList : IEnumerable<object?>, ICloneable, IEquatable<VmList>
 {
@@ -79,9 +79,8 @@ public class VmList : IEnumerable<object?>, ICloneable, IEquatable<VmList>
     private object? GetElement(int index)
     {
         index--;
-        if (index > Len)
-            throw new UnreachableException(
-                $"The element at index {index + 1} does not exist. List length - {Len}");
+        if (index > Len || index < 0)
+            throw new VmException($"The element at index {index + 1} does not exist. List length - {Len}");
 
         return _array[index];
     }

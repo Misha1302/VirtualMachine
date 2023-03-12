@@ -4,13 +4,14 @@ public class FunctionsPool
 {
     private readonly FunctionFrame[] _functionFramesTrace;
     private readonly FunctionFrame[] _pool;
+    public readonly VariablesPool VariablesPool = new();
     private int _framesTracePointer;
     private int _poolPointer;
 
-    public FunctionsPool(int maxRecursion = 1024)
+    public FunctionsPool(int maxRecursion)
     {
         _pool = new FunctionFrame[maxRecursion];
-        for (int i = 0; i < maxRecursion; i++) _pool[i] = new FunctionFrame();
+        for (int i = 0; i < maxRecursion; i++) _pool[i] = new FunctionFrame(VariablesPool);
 
         _functionFramesTrace = new FunctionFrame[maxRecursion];
     }

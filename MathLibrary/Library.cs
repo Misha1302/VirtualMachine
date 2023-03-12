@@ -15,13 +15,13 @@ public static class Library
 
     private static decimal ReadDecimal(VmRuntime vmRuntime)
     {
-        return (decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        return (decimal)(vmRuntime.Memory.Pop() ?? throw new VmException());
     }
 
     public static void Pow(VmRuntime vmRuntime, int argsCount)
     {
         decimal a = ReadDecimal(vmRuntime);
-        decimal b = (decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        decimal b = (decimal)(vmRuntime.Memory.Pop() ?? throw new VmException());
         vmRuntime.Memory.Push(NeilMath.Pow(a, b));
     }
 
@@ -152,7 +152,7 @@ public static class Library
         {
             return m switch
             {
-                < -1m or > 1m => throw new ArgumentOutOfRangeException(nameof(m)),
+                < -1m or > 1m => throw new VmException(nameof(m)),
                 -1m => Pi,
                 0m => PiHalf,
                 1m => 0m,
@@ -165,7 +165,7 @@ public static class Library
         {
             return m switch
             {
-                < -1m or > 1m => throw new ArgumentOutOfRangeException(nameof(m)),
+                < -1m or > 1m => throw new VmException(nameof(m)),
                 -1m => -PiHalf,
                 0m => 0m,
                 1m => PiHalf,
@@ -367,10 +367,10 @@ public static class Library
             switch (m)
             {
                 case < 0:
-                    throw new ArgumentException("Natural logarithm is a complex number for values less than zero!",
+                    throw new VmException("Natural logarithm is a complex number for values less than zero!",
                         nameof(m));
                 case 0:
-                    throw new OverflowException(
+                    throw new VmException(
                         "Natural logarithm is defined as negative infinity at zero which the Decimal data type can't represent!");
                 case 1:
                     return 0;
@@ -436,7 +436,7 @@ public static class Library
             // Substituting null for double.NaN
             if (newBase == 1)
             {
-                // throw new InvalidOperationException("Logarithm for base 1 is undefined.");
+                // throw new VmException("Logarithm for base 1 is undefined.");
                 // return null;
             }
 
@@ -449,19 +449,19 @@ public static class Library
             switch (m)
             {
                 case < 0:
-                    throw new ArgumentException("Logarithm is a complex number for values less than zero!", nameof(m));
+                    throw new VmException("Logarithm is a complex number for values less than zero!", nameof(m));
                 case 0:
-                    throw new OverflowException(
+                    throw new VmException(
                         "Logarithm is defined as negative infinity at zero which the Decimal data type can't represent!");
             }
 
             switch (newBase)
             {
                 case < 0:
-                    throw new ArgumentException("Logarithm base would be a complex number for values less than zero!",
+                    throw new VmException("Logarithm base would be a complex number for values less than zero!",
                         nameof(newBase));
                 case 0:
-                    throw new OverflowException(
+                    throw new VmException(
                         "Logarithm base would be negative infinity at zero which the Decimal data type can't represent!");
             }
 
@@ -484,9 +484,9 @@ public static class Library
 
             return m switch
             {
-                < 0 => throw new ArgumentException("Logarithm is a complex number for values less than zero!",
+                < 0 => throw new VmException("Logarithm is a complex number for values less than zero!",
                     nameof(m)),
-                0 => throw new OverflowException(
+                0 => throw new VmException(
                     "Logarithm is defined as negative infinity at zero which the Decimal data type can't represent!"),
                 _ => Log(m) / Ln10
             };
@@ -552,7 +552,7 @@ public static class Library
             if (isNegativeExponent)
             {
                 // Note, for IEEE floats this would be Infinity and not an exception...
-                if (result == 0) throw new OverflowException("Negative power of 0 is undefined!");
+                if (result == 0) throw new VmException("Negative power of 0 is undefined!");
 
                 result = 1 / result;
             }
@@ -619,7 +619,7 @@ public static class Library
         public static decimal Sqrt(decimal m)
         {
             if (m < 0m)
-                throw new ArgumentException("Square root not defined for Decimal data type when less than zero!",
+                throw new VmException("Square root not defined for Decimal data type when less than zero!",
                     nameof(m));
 
             // Prevent divide-by-zero errors below. Dividing either
@@ -659,7 +659,7 @@ public static class Library
             }
             catch (DivideByZeroException)
             {
-                throw new Exception("Tangent is undefined at this angle!");
+                throw new VmException("Tangent is undefined at this angle!");
             }
         }
 
@@ -673,9 +673,9 @@ public static class Library
         private static decimal ExpBySquaring(decimal x, decimal y)
         {
             Debug.Assert(y >= 0 && decimal.Truncate(y) == y, "Only non-negative, integer powers supported.");
-            if (y < 0) throw new ArgumentOutOfRangeException(nameof(y), "Negative exponents not supported!");
+            if (y < 0) throw new VmException(nameof(y), "Negative exponents not supported!");
 
-            if (decimal.Truncate(y) != y) throw new ArgumentException("Exponent must be an integer!", nameof(y));
+            if (decimal.Truncate(y) != y) throw new VmException("Exponent must be an integer!", nameof(y));
 
             decimal result = 1m;
             decimal multiplier = x;

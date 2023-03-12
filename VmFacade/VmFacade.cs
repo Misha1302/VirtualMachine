@@ -1,7 +1,6 @@
 ﻿namespace VmFacade;
 
 using System.Globalization;
-using System.Runtime.InteropServices;
 using Tokenizer.Parser;
 using Tokenizer.Token;
 using VirtualMachine;
@@ -9,22 +8,8 @@ using VmCompiler;
 
 public static class VmFacade
 {
-    private const int AttachParentProcess = -1;
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool AllocConsole();
-
-    [DllImport("kernel32.dll")]
-    private static extern bool AttachConsole(int dwProcessId);
-
-    public static void Run(string code, bool useConsole = true)
+    public static void Run(string code)
     {
-        if (useConsole)
-        {
-            AttachConsole(AttachParentProcess);
-            AllocConsole();
-        }
-
         VirtualMachine.RunAndWait(Compile(code));
     }
 

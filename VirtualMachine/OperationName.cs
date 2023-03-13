@@ -27,7 +27,7 @@ public enum InstructionName : byte
     PushConstant,
     NoOperation,
     GreatThan,
-
+    
     Or,
     And,
     PushField,

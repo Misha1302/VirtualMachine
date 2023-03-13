@@ -3,7 +3,7 @@
 namespace Library;
 
 using System.Diagnostics;
-using VirtualMachine.Variable;
+using VirtualMachine.Variables;
 using VirtualMachine.VmRuntime;
 
 public static class Library
@@ -31,8 +31,8 @@ public static class Library
 
     public static void GetElement(VmRuntime vmRuntime, int argsCount)
     {
-        int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new VmException());
-        object obj = vmRuntime.Memory.Pop() ?? throw new VmException();
+        int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
+        object obj = vmRuntime.Memory.Pop() ?? throw new InvalidOperationException();
 
         vmRuntime.Memory.Push(
             obj is VmList list
@@ -44,14 +44,14 @@ public static class Library
     public static void SetElement(VmRuntime vmRuntime, int argsCount)
     {
         object? value = vmRuntime.Memory.Pop();
-        object obj = vmRuntime.Memory.Pop() ?? throw new VmException();
-        int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new VmException());
+        object obj = vmRuntime.Memory.Pop() ?? throw new InvalidOperationException();
+        int index = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new InvalidOperationException());
 
         if (obj is VmList list)
             list[index] = value;
         else
             vmRuntime.Memory.Push(ReplaceAt((string)obj, index - 1,
-                ((string)(value ?? throw new VmException()))[0]));
+                ((string)(value ?? throw new InvalidOperationException()))[0]));
 
 
         string ReplaceAt(string input, int charIndex, char newChar)
@@ -78,7 +78,7 @@ public static class Library
         {
             string s => s.Length,
             VmList list => list.Len,
-            _ => throw new VmException(
+            _ => throw new InvalidOperationException(
                 $"Unable to find length from object {VmRuntime.ObjectToString(obj)}")
         };
 
@@ -104,7 +104,7 @@ public static class Library
     public static void ToCharArray(VmRuntime vmRuntime, int argsCount)
     {
         object? obj = vmRuntime.Memory.Pop();
-        string str = (string)(obj ?? throw new VmException());
+        string str = (string)(obj ?? throw new InvalidOperationException());
         vmRuntime.Memory.Push(str.ToCharArray().Select(x => (object)x).ToList());
     }
 
@@ -128,7 +128,7 @@ public static class Library
         }
         else
         {
-            vmRuntime.Memory.Push(((string)(obj ?? throw new VmException())).Reverse());
+            vmRuntime.Memory.Push(((string)(obj ?? throw new InvalidOperationException())).Reverse());
         }
     }
 
@@ -139,7 +139,7 @@ public static class Library
 
     public static void ToNumber(VmRuntime vmRuntime, int argsCount)
     {
-        object memoryARegister = vmRuntime.Memory.Pop() ?? throw new VmException();
+        object memoryARegister = vmRuntime.Memory.Pop() ?? throw new NullReferenceException();
 
         decimal value = memoryARegister is string s
             ? Convert.ToDecimal(s.Replace("_", ""))
@@ -155,8 +155,8 @@ public static class Library
 
     public static void RandomInteger(VmRuntime vmRuntime, int argsCount)
     {
-        int max = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new VmException());
-        int min = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new VmException());
+        int max = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new NullReferenceException());
+        int min = (int)(decimal)(vmRuntime.Memory.Pop() ?? throw new NullReferenceException());
 
         vmRuntime.Memory.Push((decimal)Random.Shared.Next(min, max + 1));
     }

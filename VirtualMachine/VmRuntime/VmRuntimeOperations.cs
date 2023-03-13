@@ -1,9 +1,10 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
+using System.Data;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
-using global::VirtualMachine.Variable;
+using global::VirtualMachine.Variables;
 
 public partial class VmRuntime
 {
@@ -12,9 +13,9 @@ public partial class VmRuntime
 
     private void Not()
     {
-        object obj = Memory.Pop() ?? throw new VmException();
+        object obj = Memory.Pop() ?? throw new InvalidOperationException();
         if (obj is decimal d) Memory.Push(d == 0 ? _one : _zero);
-        else throw new VmException();
+        else throw new StrongTypingException();
     }
 
 
@@ -27,7 +28,7 @@ public partial class VmRuntime
         {
             case decimal m:
                 bool isEquals = decimal.Round(m, Decimals) ==
-                                decimal.Round((decimal)(b ?? throw new VmException()), Decimals);
+                                decimal.Round((decimal)(b ?? throw new InvalidOperationException()), Decimals);
                 Memory.Push(isEquals ? _one : _zero);
                 break;
             default:
@@ -44,16 +45,14 @@ public partial class VmRuntime
         switch (a)
         {
             case decimal m:
-                decimal m1 = (decimal)(b ?? throw new VmException());
-                if (m1 == 0) throw new VmException("Division by zero.");
-                Memory.Push(m / m1);
+                Memory.Push(m / (decimal)(b ?? throw new InvalidOperationException()));
                 break;
             case string s:
                 VmList strings = new(s.Split((string)(b ?? string.Empty)).Select(x => (object?)x).ToList());
                 Memory.Push(strings);
                 break;
             default:
-                throw new VmException();
+                throw new StrongTypingException();
         }
     }
 
@@ -65,16 +64,16 @@ public partial class VmRuntime
         switch (a)
         {
             case decimal m:
-                Memory.Push(m * (decimal)(b ?? throw new VmException()));
+                Memory.Push(m * (decimal)(b ?? throw new InvalidOperationException()));
                 break;
             case string s:
                 StringBuilder stringBuilder = new();
-                for (int i = 0; i < (decimal)(b ?? throw new VmException()); i++)
+                for (int i = 0; i < (decimal)(b ?? throw new InvalidOperationException()); i++)
                     stringBuilder.Append(s);
                 Memory.Push(stringBuilder.ToString());
                 break;
             default:
-                throw new VmException();
+                throw new StrongTypingException();
         }
     }
 
@@ -83,8 +82,8 @@ public partial class VmRuntime
     {
         ReadTwoValues(out object? a, out object? b);
 
-        decimal obj0 = (decimal)(a ?? throw new VmException());
-        decimal obj1 = (decimal)(b ?? throw new VmException());
+        decimal obj0 = (decimal)(a ?? throw new InvalidOperationException());
+        decimal obj1 = (decimal)(b ?? throw new InvalidOperationException());
         Memory.Push(obj0 - obj1);
     }
 
@@ -99,16 +98,16 @@ public partial class VmRuntime
     private void Increase()
     {
         VmVariable variable =
-            Memory.FindVariableById((int)(decimal)(GetConstant() ?? throw new VmException()));
-        variable.VariableValue = (decimal)(variable.VariableValue ?? throw new VmException()) + 1;
+            Memory.FindVariableById((int)(decimal)(GetConstant() ?? throw new InvalidOperationException()));
+        variable.VariableValue = (decimal)(variable.VariableValue ?? throw new InvalidOperationException()) + 1;
     }
 
 
     private void Decrease()
     {
         VmVariable variable =
-            Memory.FindVariableById((int)(decimal)(GetConstant() ?? throw new VmException()));
-        variable.VariableValue = (decimal)(variable.VariableValue ?? throw new VmException()) - 1;
+            Memory.FindVariableById((int)(decimal)(GetConstant() ?? throw new InvalidOperationException()));
+        variable.VariableValue = (decimal)(variable.VariableValue ?? throw new InvalidOperationException()) - 1;
     }
 
 
@@ -125,14 +124,14 @@ public partial class VmRuntime
         switch (a)
         {
             case decimal m:
-                Memory.Push(m + (decimal)(b ?? throw new VmException()));
+                Memory.Push(m + (decimal)(b ?? throw new InvalidOperationException()));
                 break;
             case string str0:
                 Memory.Push(str0 + ObjectToString(b));
                 break;
             default:
                 if (b is string str1) Memory.Push(ObjectToString(a) + str1);
-                else throw new VmException();
+                else throw new StrongTypingException();
                 break;
         }
     }
@@ -164,7 +163,7 @@ public partial class VmRuntime
 
     private void CallMethod()
     {
-        object[] memoryConstant = (object[])(Memory.Constants[Memory.Ip] ?? throw new VmException());
+        object[] memoryConstant = (object[])(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
         AssemblyManager.CallingDelegate method = (AssemblyManager.CallingDelegate)memoryConstant[0];
         int countOfArgs = (int)memoryConstant[1];
 
@@ -173,8 +172,8 @@ public partial class VmRuntime
 
     private void JumpIfNotZero()
     {
-        int ip = (int)(decimal)(GetConstant() ?? throw new VmException());
-        object obj = Memory.Pop() ?? throw new VmException();
+        int ip = (int)(decimal)(GetConstant() ?? throw new InvalidOperationException());
+        object obj = Memory.Pop() ?? throw new InvalidOperationException();
         switch (obj)
         {
             case decimal d when d != 0:
@@ -192,8 +191,8 @@ public partial class VmRuntime
 
     private void JumpIfZero()
     {
-        int ip = (int)(decimal)(GetConstant() ?? throw new VmException());
-        object obj = Memory.Pop() ?? throw new VmException();
+        int ip = (int)(decimal)(GetConstant() ?? throw new InvalidOperationException());
+        object obj = Memory.Pop() ?? throw new InvalidOperationException();
 
         if ((decimal)obj == 0) JumpInternal(ip);
     }
@@ -215,10 +214,10 @@ public partial class VmRuntime
 
     private void PushAddress()
     {
-        object?[] constants = (object?[])(Memory.Constants[Memory.Ip] ?? throw new VmException());
+        object?[] constants = (object?[])(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
 
-        string funcName = (string)(constants[0] ?? throw new VmException());
-        int paramsCount = (int)(constants[1] ?? throw new VmException());
+        string funcName = (string)(constants[0] ?? throw new InvalidOperationException());
+        int paramsCount = (int)(constants[1] ?? throw new InvalidOperationException());
 
         Memory.OnCallingFunction(funcName, paramsCount, Memory.Ip + 1);
     }
@@ -238,15 +237,15 @@ public partial class VmRuntime
 
     private void Jump()
     {
-        int ip = (int)(decimal)(GetConstant() ?? throw new VmException());
+        int ip = (int)(decimal)(GetConstant() ?? throw new InvalidOperationException());
         JumpInternal(ip);
     }
 
 
     private void CreateVariable()
     {
-        VmVariable variable = (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new VmException());
-        if (Memory.FunctionsPool.VariablesPool.Variables.ContainsKey(variable.Id)) return;
+        VmVariable variable = (VmVariable)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
+        if (Memory.CurrentFunctionFrame.Variables.ContainsKey(variable.Id)) return;
         Memory.CreateVariable(new VmVariable(variable.Name));
     }
 
@@ -289,16 +288,16 @@ public partial class VmRuntime
 
     private void PushField()
     {
-        VmStruct structure = (VmStruct)(Memory.Pop() ?? throw new VmException());
-        int fieldId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new VmException());
+        VmStruct structure = (VmStruct)(Memory.Pop() ?? throw new InvalidOperationException());
+        int fieldId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
 
         Memory.Push(structure.GetValue(fieldId));
     }
 
     private void SetField()
     {
-        VmStruct structure = (VmStruct)(Memory.Pop() ?? throw new VmException());
-        int fieldId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new VmException());
+        VmStruct structure = (VmStruct)(Memory.Pop() ?? throw new InvalidOperationException());
+        int fieldId = (int)(decimal)(Memory.Constants[Memory.Ip] ?? throw new InvalidOperationException());
         object? value = Memory.Pop();
 
         structure.SetValue(fieldId, value);
@@ -313,7 +312,7 @@ public partial class VmRuntime
         {
             case decimal m:
                 bool isEquals = decimal.Round(m, Decimals) ==
-                                decimal.Round((decimal)(b ?? throw new VmException()), Decimals);
+                                decimal.Round((decimal)(b ?? throw new InvalidOperationException()), Decimals);
                 Memory.Push(isEquals ? _zero : _one);
                 break;
             default:
@@ -324,16 +323,16 @@ public partial class VmRuntime
 
     private void PushFailed()
     {
-        _failedStack.Push((int)(decimal)(GetConstant() ?? throw new VmException()));
+        _failedStack.Push((int)(decimal)(GetConstant() ?? throw new InvalidOperationException()));
     }
 
     private void JumpToFuncMethod()
     {
-        object[] constants = (object[])(GetConstant() ?? throw new VmException());
-        string funcName = (string)(constants[0] ?? throw new VmException());
-        int paramsCount = (int)(constants[1] ?? throw new VmException());
+        object[] constants = (object[])(GetConstant() ?? throw new InvalidOperationException());
+        string funcName = (string)(constants[0] ?? throw new InvalidOperationException());
+        int paramsCount = (int)(constants[1] ?? throw new InvalidOperationException());
 
-        string labelName = ((VmStruct)(Memory.Pop() ?? throw new VmException())).Name + funcName;
+        string labelName = ((VmStruct)(Memory.Pop() ?? throw new InvalidOperationException())).Name + funcName;
         Memory.OnCallingFunction(labelName, paramsCount, Memory.Ip);
         JumpInternal(Memory.GetLabelPointer(labelName));
     }

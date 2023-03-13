@@ -1,22 +1,23 @@
 ﻿namespace VirtualMachine;
 
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using global::VirtualMachine.Variable;
+using global::VirtualMachine.Variables;
 using global::VirtualMachine.VmRuntime;
 
 public record VmMemory
 {
     private const int DefaultProgramSize = 128;
-    private const int RecursionSize = 16384;
+    private const int RecursionSize = 1024;
     private const string MainFuncName = "__main__";
-    private readonly Dictionary<string, int> _labels = new(64);
+
+    private readonly FunctionsPool _functionsPool = new();
     private readonly object?[] _params = new object?[32];
     private readonly int[] _recursionStack = new int[RecursionSize];
-
-    public readonly FunctionsPool FunctionsPool = new(RecursionSize);
+    private Dictionary<string, int> _labels = new(64);
     private int _rp; // recursion pointer
-
+    
     public Dictionary<int, object?> Constants = new(64);
     public FunctionFrame CurrentFunctionFrame;
     public InstructionName[] InstructionsArray = new InstructionName[DefaultProgramSize];
@@ -26,7 +27,7 @@ public record VmMemory
     public VmMemory(Dictionary<string, int> labels)
     {
         _labels = labels;
-        CurrentFunctionFrame = FunctionsPool.GetNewFunction(MainFuncName);
+        CurrentFunctionFrame = _functionsPool.GetNewFunction(MainFuncName);
     }
 
     public int GetLabelPointer(string labelName)
@@ -62,7 +63,7 @@ public record VmMemory
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public VmVariable FindVariableById(int id)
     {
-        return CollectionsMarshal.GetValueRefOrNullRef(FunctionsPool.VariablesPool.Variables, id);
+        return CollectionsMarshal.GetValueRefOrNullRef(CurrentFunctionFrame.Variables, id);
     }
 
     public void OnCallingFunction(string funcName, int paramsCount, int ip)
@@ -70,7 +71,7 @@ public record VmMemory
         _recursionStack[_rp++] = ip;
 
         for (int i = 0; i < paramsCount; i++) _params[i] = Pop();
-        CurrentFunctionFrame = FunctionsPool.GetNewFunction(funcName);
+        CurrentFunctionFrame = _functionsPool.GetNewFunction(funcName);
         for (int i = 0; i < paramsCount; i++) Push(_params[i]);
     }
 
@@ -81,13 +82,13 @@ public record VmMemory
 
         object? returnObject = CurrentFunctionFrame.Sp != 0 ? Pop() : null;
 
-        CurrentFunctionFrame = FunctionsPool.FreeFunction();
+        CurrentFunctionFrame = _functionsPool.FreeFunction();
 
         Push(returnObject);
     }
 
     public List<FunctionFrame> GetFunctionsFramesTrace()
     {
-        return FunctionsPool.GetTrace();
+        return _functionsPool.GetTrace();
     }
 }

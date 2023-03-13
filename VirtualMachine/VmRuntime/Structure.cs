@@ -1,7 +1,7 @@
 ﻿namespace VirtualMachine.VmRuntime;
 
 using System.Runtime.InteropServices;
-using global::VirtualMachine.Variable;
+using global::VirtualMachine.Variables;
 
 public class VmStruct
 {
